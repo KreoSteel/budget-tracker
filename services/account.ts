@@ -10,7 +10,7 @@ export async function getAllAccounts() {
   }
 }
 
-export async function getAccountById(id: ObjectId) {
+export async function getAccountById(id: string) {
   try {
     const account = await Account.findById(id);
     return account;
@@ -19,12 +19,31 @@ export async function getAccountById(id: ObjectId) {
   }
 }
 
-export async function createAccount(name: string, balance:number, type: string, bankName: string) {
+export async function createAccount(name: string, balance: number, type: string, bankName: string, userId: ObjectId) {
   try {
-    const newAccount = new Account({ name, balance, type, bankName });
+    const newAccount = new Account({ name, balance, type, bankName, userId });
     await newAccount.save();
     return newAccount;
   } catch (error) {
     throw new Error("Error creating account");
   }
+}
+
+export async function updateAccount(id: string, updateData: Partial<typeof Account>) {
+    const result = await Account.findById(id);
+    if (!result) {
+        throw new Error("Account not found");
+    }
+
+    const updateResult = await Account.updateOne(
+        { _id: id },
+        {
+            $set: { ...updateData },
+            $inc: { __v: 1 }
+        }
+    );
+    console.log('Updated result:', updateResult);
+    const updatedAccount = await Account.findById(id);
+
+    return updatedAccount;
 }

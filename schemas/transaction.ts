@@ -17,18 +17,18 @@ const transactionSchema = new mongoose.Schema({
         required: true
     },
 
-    categoryId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Category',
-        required: true
-    },
-
+    
     accountId: { 
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Account',
         required: true
     },
-
+    
+    categoryId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Category',
+        required: true
+    },
     date: {
         type: Date,
         required: true

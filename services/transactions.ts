@@ -6,17 +6,18 @@ export async function getAllTransactions() {
     return transactions;
 }
 
-export async function getTransactionById(id: ObjectId) {
+export async function getTransactionById(id: string) {
     const transaction = await Transaction.findById(id);
     return transaction;
 }
 
-export async function createTransaction(accountId: ObjectId, categoryId: ObjectId, amount: number, type: string, date: Date, paymentMethod: string, isRecurring: boolean, recurringDetails?: any) {
+export async function createTransaction(accountId: ObjectId, categoryId: ObjectId, amount: number, type: string, description: string, date: Date, paymentMethod: string, isRecurring: boolean, recurringDetails?: any) {
     const transaction = new Transaction({
         accountId,
         categoryId,
         amount,
         type,
+        description,
         date,
         paymentMethod,
         isRecurring,
@@ -25,12 +26,26 @@ export async function createTransaction(accountId: ObjectId, categoryId: ObjectI
     return transaction.save();
 }
 
-export async function deleteTransaction(id: ObjectId) {
+export async function deleteTransaction(id: string) {
     const result = await Transaction.findByIdAndDelete(id);
     return result;
 }
 
-export async function updateTransaction(id: ObjectId, updateData: Partial<typeof Transaction>) {
-    const result = await Transaction.findByIdAndUpdate(id, updateData, { new: true });
-    return result;
+export async function updateTransaction(id: string, updateData: Partial<typeof Transaction>) {
+    const result = await Transaction.findById(id);
+    if (!result) {
+        throw new Error("Transaction not found");
+    }
+
+    const updateResult = await Transaction.updateOne(
+        { _id: id },
+        {
+            $set: { ...updateData },
+            $inc: { __v: 1 }
+        }
+    );
+    console.log('Updated result:', updateResult);
+    const updatedTransaction = await Transaction.findById(id);
+
+    return updatedTransaction;
 }
