@@ -13,11 +13,6 @@ const categorySchema = new mongoose.Schema({
     required: true
   },
 
-  icon: {
-    type: String,
-    default: 'default'
-  },
-
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -37,3 +32,5 @@ const categorySchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+export default mongoose.model("Category", categorySchema);

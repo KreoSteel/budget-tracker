@@ -9,6 +9,8 @@
     "watch": "tsc -w",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "seed": "ts-node seed.ts",
+    "seed:prod": "node dist/seed.js",
     "docker:build": "docker build -t backend .",
     "docker:rebuild": "docker stop backend 2>nul || echo Container not running && docker rm backend 2>nul || echo Container not found && docker build -t backend .",
     "docker:run": "docker run -p 3000:3000 --env-file .env --name backend backend ",

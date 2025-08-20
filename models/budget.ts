@@ -1,4 +1,10 @@
-import mongoose from "mongoose";
+import mongoose, { ObjectId } from "mongoose";
+
+export interface ICategory {
+  categoryId: ObjectId;
+  allocatedAmount: number;
+  spentAmount: number;
+}
 
 const budgetSchema = new mongoose.Schema({
   userId: {

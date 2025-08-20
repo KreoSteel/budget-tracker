@@ -1,57 +1,419 @@
 import { getAllTransactions, getTransactionById, createTransaction, deleteTransaction, updateTransaction } from "../services/transactions";
 import { Request, Response } from "express";
-import Transaction from "../schemas/transaction";
+import Transaction from "../models/transaction";
 import mongoose from "mongoose";
+const { ObjectId } = mongoose.Types;
 
 export const transactionsControllers = {
     getAllTransactions: async (req: Request, res: Response) => {
         try {
+            // Validate query parameters if they exist
+            const { userId, accountId, categoryId, type, startDate, endDate } = req.query;
+            
+            // Validate userId if provided
+            if (userId && !mongoose.Types.ObjectId.isValid(userId as string)) {
+                return res.status(400).json({ 
+                    error: "Invalid userId format",
+                    message: "userId must be a valid MongoDB ObjectId"
+                });
+            }
+
+            // Validate accountId if provided
+            if (accountId && !mongoose.Types.ObjectId.isValid(accountId as string)) {
+                return res.status(400).json({ 
+                    error: "Invalid accountId format",
+                    message: "accountId must be a valid MongoDB ObjectId"
+                });
+            }
+
+            // Validate categoryId if provided
+            if (categoryId && !mongoose.Types.ObjectId.isValid(categoryId as string)) {
+                return res.status(400).json({ 
+                    error: "Invalid categoryId format",
+                    message: "categoryId must be a valid MongoDB ObjectId"
+                });
+            }
+
+            // Validate type if provided
+            if (type && !['income', 'expense'].includes(type as string)) {
+                return res.status(400).json({ 
+                    error: "Invalid transaction type",
+                    message: "Type must be either 'income' or 'expense'",
+                    validTypes: ['income', 'expense']
+                });
+            }
+
+            // Validate dates if provided
+            if (startDate && isNaN(Date.parse(startDate as string))) {
+                return res.status(400).json({ 
+                    error: "Invalid startDate format",
+                    message: "startDate must be a valid date string"
+                });
+            }
+
+            if (endDate && isNaN(Date.parse(endDate as string))) {
+                return res.status(400).json({ 
+                    error: "Invalid endDate format",
+                    message: "endDate must be a valid date string"
+                });
+            }
+
             const transactions = await getAllTransactions();
-            res.json(transactions);
+            
+            if (!transactions || transactions.length === 0) {
+                return res.status(404).json({ 
+                    error: "No transactions found",
+                    message: "No transactions match the specified criteria"
+                });
+            }
+
+            res.json({
+                success: true,
+                count: transactions.length,
+                data: transactions
+            });
         } catch (error) {
             console.error("Error fetching transactions", error);
-            res.status(500).json({ error: "Internal server error" });
+            res.status(500).json({ 
+                error: "Internal server error",
+                message: "Failed to fetch transactions"
+            });
         }
     },
 
     getTransactionById: async (req: Request, res: Response) => {
-        const { id } = req.params;
         try {
+            const { id } = req.params;
+            
+            // Validate id parameter
+            if (!id) {
+                return res.status(400).json({ 
+                    error: "Transaction ID parameter is required",
+                    message: "Please provide transaction ID in the URL"
+                });
+            }
+
+            // Validate ObjectId format
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+                return res.status(400).json({ 
+                    error: "Invalid transaction ID format",
+                    message: "Transaction ID must be a valid MongoDB ObjectId"
+                });
+            }
+
             const transaction = await getTransactionById(id);
             if (!transaction) {
-                return res.status(404).json({ error: "Transaction not found" });
+                return res.status(404).json({ 
+                    error: "Transaction not found",
+                    message: "Transaction with the specified ID does not exist"
+                });
             }
-            res.json(transaction);
+
+            res.json({
+                success: true,
+                data: transaction
+            });
         } catch (error) {
             console.error("Error fetching transaction", error);
-            res.status(500).json({ error: "Internal server error" });
+            res.status(500).json({ 
+                error: "Internal server error",
+                message: "Failed to fetch transaction"
+            });
         }
     },
 
     createTransaction: async (req: Request, res: Response) => {
-        const { accountId, categoryId, type, amount, description, date, paymentMethod, isRecurring, recurringDetails } = req.body;
         try {
-            const newTransaction = await createTransaction(accountId, categoryId, amount, type, description, date, paymentMethod, isRecurring, recurringDetails);
-            res.status(201).json(newTransaction);
-        } catch (error) {
-            console.error("Error creating transaction", error);
-            res.status(500).json({ error: "Internal server error" });
+            const { accountId, categoryId, type, amount, description, date, paymentMethod, isRecurring, recurringDetails } = req.body;
+
+            // Validate required fields
+            if (!accountId || !categoryId || !type || !amount || !description) {
+                return res.status(400).json({ 
+                    error: "Missing required fields",
+                    required: ["accountId", "categoryId", "type", "amount", "description"],
+                    received: { accountId, categoryId, type, amount, description }
+                });
+            }
+
+            // Validate amount
+            if (typeof amount !== 'number' || amount <= 0) {
+                return res.status(400).json({ 
+                    error: "Invalid amount",
+                    message: "Amount must be a positive number"
+                });
+            }
+
+            // Validate amount precision (max 2 decimal places)
+            if (amount % 0.01 !== 0) {
+                return res.status(400).json({ 
+                    error: "Invalid amount precision",
+                    message: "Amount can have maximum 2 decimal places"
+                });
+            }
+
+            // Validate type
+            if (!['income', 'expense'].includes(type)) {
+                return res.status(400).json({ 
+                    error: "Invalid transaction type",
+                    message: "Type must be 'income' or 'expense'",
+                    validTypes: ['income', 'expense']
+                });
+            }
+
+            // Validate ObjectIds
+            if (!ObjectId.isValid(accountId) || !ObjectId.isValid(categoryId)) {
+                return res.status(400).json({ 
+                    error: "Invalid ID format",
+                    message: "accountId and categoryId must be valid MongoDB ObjectIds"
+                });
+            }
+
+            // Validate description
+            if (typeof description !== 'string' || description.trim().length === 0) {
+                return res.status(400).json({ 
+                    error: "Invalid description",
+                    message: "Description must be a non-empty string"
+                });
+            }
+
+            if (description.trim().length > 200) {
+                return res.status(400).json({ 
+                    error: "Description too long",
+                    message: "Description cannot exceed 200 characters"
+                });
+            }
+
+            // Validate date if provided
+            let transactionDate = new Date();
+            if (date) {
+                const parsedDate = new Date(date);
+                if (isNaN(parsedDate.getTime())) {
+                    return res.status(400).json({ 
+                        error: "Invalid date format",
+                        message: "Date must be a valid date string"
+                    });
+                }
+                transactionDate = parsedDate;
+            }
+
+            // Validate paymentMethod if provided
+            if (paymentMethod && typeof paymentMethod !== 'string') {
+                return res.status(400).json({ 
+                    error: "Invalid payment method",
+                    message: "Payment method must be a string"
+                });
+            }
+
+            // Validate isRecurring if provided
+            if (isRecurring !== undefined && typeof isRecurring !== 'boolean') {
+                return res.status(400).json({ 
+                    error: "Invalid isRecurring value",
+                    message: "isRecurring must be a boolean"
+                });
+            }
+
+            // Validate recurringDetails if provided
+            if (recurringDetails && typeof recurringDetails !== 'object') {
+                return res.status(400).json({ 
+                    error: "Invalid recurring details",
+                    message: "Recurring details must be an object"
+                });
+            }
+
+            // CALL SERVICE LAYER
+            const newTransaction = await createTransaction(
+                accountId,
+                categoryId,
+                amount,
+                type,
+                description,
+                transactionDate,
+                paymentMethod || 'cash',
+                isRecurring || false,
+                recurringDetails
+            );
+
+            res.status(201).json({
+                success: true,
+                message: "Transaction created successfully",
+                data: newTransaction
+            });
+
+        } catch (error: any) {
+            // HANDLE SERVICE ERRORS
+            console.error("Controller: Transaction creation failed:", error.message);
+
+            // Map business logic errors to appropriate HTTP status codes
+            if (error.message.includes("Account not found")) {
+                return res.status(404).json({ 
+                    error: "Account not found",
+                    message: error.message
+                });
+            }
+
+            if (error.message.includes("Insufficient funds")) {
+                return res.status(400).json({ 
+                    error: "Insufficient funds",
+                    message: error.message
+                });
+            }
+
+            if (error.message.includes("Category not found")) {
+                return res.status(404).json({ 
+                    error: "Category not found",
+                    message: error.message
+                });
+            }
+
+            if (error.message.includes("validation")) {
+                return res.status(400).json({ 
+                    error: "Validation error",
+                    message: error.message
+                });
+            }
+
+            // Generic server error for unexpected issues
+            res.status(500).json({ 
+                error: "Internal server error",
+                message: "Failed to create transaction"
+            });
         }
     },
 
     updateTransaction: async (req: Request, res: Response) => {
-        const { id } = req.params;
-        const updateData = req.body;
         try {
+            const { id } = req.params;
+            const updateData = req.body;
+            
+            // Validate id parameter
+            if (!id) {
+                return res.status(400).json({ 
+                    error: "Transaction ID parameter is required",
+                    message: "Please provide transaction ID in the URL"
+                });
+            }
+
+            // Validate ObjectId format
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+                return res.status(400).json({ 
+                    error: "Invalid transaction ID format",
+                    message: "Transaction ID must be a valid MongoDB ObjectId"
+                });
+            }
+
+            // Validate update data
+            if (!updateData || Object.keys(updateData).length === 0) {
+                return res.status(400).json({ 
+                    error: "Update data is required",
+                    message: "Please provide data to update"
+                });
+            }
+
+            // Validate specific fields if they're being updated
+            if (updateData.amount !== undefined) {
+                if (typeof updateData.amount !== 'number' || updateData.amount <= 0) {
+                    return res.status(400).json({ 
+                        error: "Invalid amount",
+                        message: "Amount must be a positive number"
+                    });
+                }
+                if (updateData.amount % 0.01 !== 0) {
+                    return res.status(400).json({ 
+                        error: "Invalid amount precision",
+                        message: "Amount can have maximum 2 decimal places"
+                    });
+                }
+            }
+
+            if (updateData.type && !['income', 'expense'].includes(updateData.type)) {
+                return res.status(400).json({ 
+                    error: "Invalid transaction type",
+                    message: "Type must be 'income' or 'expense'",
+                    validTypes: ['income', 'expense']
+                });
+            }
+
+            if (updateData.description !== undefined) {
+                if (typeof updateData.description !== 'string' || updateData.description.trim().length === 0) {
+                    return res.status(400).json({ 
+                        error: "Invalid description",
+                        message: "Description must be a non-empty string"
+                    });
+                }
+                if (updateData.description.trim().length > 200) {
+                    return res.status(400).json({ 
+                        error: "Description too long",
+                        message: "Description cannot exceed 200 characters"
+                    });
+                }
+            }
+
+            if (updateData.date !== undefined) {
+                const parsedDate = new Date(updateData.date);
+                if (isNaN(parsedDate.getTime())) {
+                    return res.status(400).json({ 
+                        error: "Invalid date format",
+                        message: "Date must be a valid date string"
+                    });
+                }
+            }
+
+            if (updateData.accountId && !mongoose.Types.ObjectId.isValid(updateData.accountId)) {
+                return res.status(400).json({ 
+                    error: "Invalid accountId format",
+                    message: "accountId must be a valid MongoDB ObjectId"
+                });
+            }
+
+            if (updateData.categoryId && !mongoose.Types.ObjectId.isValid(updateData.categoryId)) {
+                return res.status(400).json({ 
+                    error: "Invalid categoryId format",
+                    message: "categoryId must be a valid MongoDB ObjectId"
+                });
+            }
+
             const updatedTransaction = await updateTransaction(id, updateData);
             if (!updatedTransaction) {
-                return res.status(404).json({ error: "Transaction not found" });
+                return res.status(404).json({ 
+                    error: "Transaction not found",
+                    message: "Transaction with the specified ID does not exist"
+                });
             }
-            res.json(updatedTransaction);
+
+            res.json({
+                success: true,
+                message: "Transaction updated successfully",
+                data: updatedTransaction
+            });
         } catch (error) {
             console.error("Error updating transaction", error);
-            res.status(500).json({ error: "Internal server error" });
+            
+            // Handle specific service errors
+            if (error instanceof Error) {
+                if (error.message.includes("not found")) {
+                    return res.status(404).json({ 
+                        error: "Transaction not found",
+                        message: error.message
+                    });
+                }
+                if (error.message.includes("validation")) {
+                    return res.status(400).json({ 
+                        error: "Validation error",
+                        message: error.message
+                    });
+                }
+                if (error.message.includes("cannot update")) {
+                    return res.status(400).json({ 
+                        error: "Cannot update transaction",
+                        message: error.message
+                    });
+                }
+            }
+            
+            res.status(500).json({ 
+                error: "Internal server error",
+                message: "Failed to update transaction"
+            });
         }
     }
-
-}
+};
