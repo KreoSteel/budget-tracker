@@ -114,3 +114,28 @@ export async function updateTransaction(id: string, updateData: Partial<typeof T
 
     return updatedTransaction;
 }
+
+export async function getTransactionsByDateRange(startDate: Date, endDate: Date, userId: string) {
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+        throw new Error("Invalid userId format");
+    }
+    const transactions = await Transaction.find({ date: { $gte: startDate, $lte: endDate }, userId: new mongoose.Types.ObjectId(userId) });
+    return transactions;
+}
+
+
+export async function getTransactionsByCategory(categoryId: string, period: string, userId: string) {
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+        throw new Error("Invalid userId format");
+    }
+    const transactions = await Transaction.find({ categoryId: new mongoose.Types.ObjectId(categoryId), userId: new mongoose.Types.ObjectId(userId) });
+    return transactions;
+}
+
+export async function getTransactionsByAccount(accountId: string, period: string, userId: string) {
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+        throw new Error("Invalid userId format");
+    }
+    const transactions = await Transaction.find({ accountId: new mongoose.Types.ObjectId(accountId), userId: new mongoose.Types.ObjectId(userId) });
+    return transactions;
+}

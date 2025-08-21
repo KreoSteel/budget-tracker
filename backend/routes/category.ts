@@ -6,6 +6,15 @@ const router = Router();
 // GET all categories for a user
 router.get("/", categoriesControllers.getAllCategories);
 
+// GET categories by user ID
+router.get("/user/:userId", categoriesControllers.getCategoryByUserId);
+
+// GET category spending by category ID and user ID
+router.get("/:categoryId/spending/:userId", categoriesControllers.getCategorySpending);
+
+// GET category income by category ID and user ID
+router.get("/:categoryId/income/:userId", categoriesControllers.getCategoryIncome);
+
 // GET a specific category by ID
 router.get("/:id", categoriesControllers.getCategoryById);
 

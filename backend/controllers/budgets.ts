@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getBudgetsByUserId, getBudgetById, updateBudget, createBudget, deleteBudget } from "../services/budget";
+import { getBudgetsByUserId, getBudgetById, updateBudget, createBudget, deleteBudget, getBudgetProgress, getBudgetAlerts } from "../services/budget";
 import { ObjectId } from "mongoose";
 import mongoose from "mongoose";
 
@@ -357,5 +357,95 @@ export const budgetsController = {
                 message: "Failed to delete budget"
             });
         }
+    },
+
+    getBudgetProgress: async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+            const userId = req.query.userId || req.headers['user-id'];
+
+            if (!userId) {
+                return res.status(400).json({ error: "userId parameter is required" });
+            }
+
+            if (!mongoose.Types.ObjectId.isValid(userId as string)) {
+                return res.status(400).json({ error: "Invalid userId format" });
+            }
+
+            const progress = await getBudgetProgress(id);
+            res.json({
+                success: true,
+                data: progress
+            });
+        } catch (error) {
+            console.error("Error fetching budget progress:", error);
+            res.status(500).json({ 
+                error: "Internal server error",
+                message: "Failed to fetch budget progress"
+            });
+        }
+    },
+
+    getBudgetAlerts: async (req: Request, res: Response) => {
+        try {
+            const { budgetId } = req.params;
+            const userId = req.query.userId || req.headers['user-id'];
+
+            // Validate budgetId parameter
+            if (!budgetId) {
+                return res.status(400).json({ 
+                    error: "Budget ID parameter is required",
+                    message: "Please provide budgetId in the URL"
+                });
+            }
+
+            // Validate userId parameter
+            if (!userId) {
+                return res.status(400).json({ 
+                    error: "userId parameter is required",
+                    message: "Please provide userId in query parameters or headers"
+                });
+            }
+
+            // Validate ObjectId formats
+            if (!mongoose.Types.ObjectId.isValid(budgetId)) {
+                return res.status(400).json({ 
+                    error: "Invalid budget ID format",
+                    message: "Budget ID must be a valid MongoDB ObjectId"
+                });
+            }
+
+            if (!mongoose.Types.ObjectId.isValid(userId as string)) {
+                return res.status(400).json({ 
+                    error: "Invalid userId format",
+                    message: "userId must be a valid MongoDB ObjectId"
+                });
+            }
+
+            const alerts = await getBudgetAlerts(budgetId, userId as string);
+            
+            res.json({
+                success: true,
+                count: alerts.length,
+                data: alerts
+            });
+        } catch (error) {
+            console.error("Error fetching budget alerts:", error);
+            
+            // Handle specific service errors
+            if (error instanceof Error) {
+                if (error.message === "Budget not found") {
+                    return res.status(404).json({ 
+                        error: "Budget not found",
+                        message: error.message
+                    });
+                }
+            }
+            
+            res.status(500).json({ 
+                error: "Internal server error",
+                message: "Failed to fetch budget alerts"
+            });
+        }
     }
-}
+};

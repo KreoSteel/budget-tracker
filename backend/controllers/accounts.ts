@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { createAccount, getAllAccounts, getAccountById, getAccountsByUserId, getAccountsByType, deleteAccount, deactivateAccount, activateAccount } from "../services/account";
+import { createAccount, getAllAccounts, getAccountById, getAccountsByUserId, getAccountsByType, deleteAccount, deactivateAccount, activateAccount, transferBetweenAccounts, getTotalNetWorth, getAccountBalanceHistory } from "../services/account";
 import mongoose from "mongoose";
 
 export const accountsControllers = {
@@ -396,6 +396,300 @@ export const accountsControllers = {
             res.status(500).json({ 
                 error: "Internal server error",
                 message: "Failed to delete account"
+            });
+        }
+    },
+
+    getAccountsByUserId: async (req: Request, res: Response) => {
+        try {
+            const { userId } = req.params;
+            
+            // Validate userId parameter
+            if (!userId) {
+                return res.status(400).json({ 
+                    error: "userId parameter is required",
+                    message: "Please provide userId in the URL"
+                });
+            }
+
+            // Validate userId format
+            if (!mongoose.Types.ObjectId.isValid(userId)) {
+                return res.status(400).json({ 
+                    error: "Invalid userId format",
+                    message: "userId must be a valid MongoDB ObjectId"
+                });
+            }
+
+            const accounts = await getAccountsByUserId(new mongoose.Types.ObjectId(userId));
+            
+            if (!accounts || accounts.length === 0) {
+                return res.status(404).json({ 
+                    error: "No accounts found",
+                    message: "No accounts found for this user"
+                });
+            }
+
+            res.json({
+                success: true,
+                count: accounts.length,
+                data: accounts
+            });
+        } catch (error) {
+            console.error("Error fetching accounts by user ID:", error);
+            res.status(500).json({ 
+                error: "Internal server error",
+                message: "Failed to fetch accounts by user ID"
+            });
+        }
+    },
+
+    transferBetweenAccounts: async (req: Request, res: Response) => {
+        try {
+            const { fromAccountId, toAccountId, amount } = req.body;
+            
+            // Validate required fields
+            if (!fromAccountId || !toAccountId || amount === undefined) {
+                return res.status(400).json({ 
+                    error: "Missing required fields",
+                    message: "fromAccountId, toAccountId, and amount are required",
+                    required: ["fromAccountId", "toAccountId", "amount"]
+                });
+            }
+
+            // Validate account IDs format
+            if (!mongoose.Types.ObjectId.isValid(fromAccountId)) {
+                return res.status(400).json({ 
+                    error: "Invalid fromAccountId format",
+                    message: "fromAccountId must be a valid MongoDB ObjectId"
+                });
+            }
+
+            if (!mongoose.Types.ObjectId.isValid(toAccountId)) {
+                return res.status(400).json({ 
+                    error: "Invalid toAccountId format",
+                    message: "toAccountId must be a valid MongoDB ObjectId"
+                });
+            }
+
+            // Validate accounts are different
+            if (fromAccountId === toAccountId) {
+                return res.status(400).json({ 
+                    error: "Invalid transfer request",
+                    message: "Cannot transfer to the same account"
+                });
+            }
+
+            // Validate amount
+            if (typeof amount !== 'number' || amount <= 0) {
+                return res.status(400).json({ 
+                    error: "Invalid amount",
+                    message: "Amount must be a positive number"
+                });
+            }
+
+            if (amount > 1000000) { // Example max transfer limit
+                return res.status(400).json({ 
+                    error: "Transfer limit exceeded",
+                    message: "Transfer amount cannot exceed 1,000,000"
+                });
+            }
+
+            const { fromAccount, toAccount } = await transferBetweenAccounts(fromAccountId, toAccountId, amount);
+            
+            res.json({
+                success: true,
+                message: "Transfer between accounts successful",
+                transferAmount: amount,
+                data: { 
+                    fromAccount: {
+                        id: fromAccount._id,
+                        name: fromAccount.name,
+                        newBalance: fromAccount.balance
+                    },
+                    toAccount: {
+                        id: toAccount._id,
+                        name: toAccount.name,
+                        newBalance: toAccount.balance
+                    }
+                }
+            });
+        } catch (error) {
+            console.error("Error transferring between accounts:", error);
+            
+            if (error instanceof Error) {
+                if (error.message.includes("Account not found")) {
+                    return res.status(404).json({ 
+                        error: "Account not found",
+                        message: "One or both accounts do not exist"
+                    });
+                }
+                if (error.message.includes("Insufficient balance")) {
+                    return res.status(400).json({ 
+                        error: "Insufficient balance",
+                        message: "The source account does not have enough funds for this transfer"
+                    });
+                }
+            }
+            
+            res.status(500).json({ 
+                error: "Internal server error",
+                message: "Failed to transfer between accounts"
+            });
+        }
+    },
+
+    totalNetWorth: async (req: Request, res: Response) => {
+        try {
+            const { userId } = req.params;
+            
+            // Validate userId parameter
+            if (!userId) {
+                return res.status(400).json({ 
+                    error: "userId parameter is required",
+                    message: "Please provide userId in the URL"
+                });
+            }
+
+            // Validate userId format
+            if (!mongoose.Types.ObjectId.isValid(userId)) {
+                return res.status(400).json({ 
+                    error: "Invalid userId format",
+                    message: "userId must be a valid MongoDB ObjectId"
+                });
+            }
+
+            // Validate userId is not empty string after trim
+            if (userId.trim().length === 0) {
+                return res.status(400).json({ 
+                    error: "Invalid userId",
+                    message: "userId cannot be empty"
+                });
+            }
+
+            const userObjectId = new mongoose.Types.ObjectId(userId);
+            const netWorth = await getTotalNetWorth(userObjectId);
+            
+            // Validate that we got a valid number back
+            if (typeof netWorth !== 'number' || isNaN(netWorth)) {
+                return res.status(500).json({ 
+                    error: "Calculation error",
+                    message: "Failed to calculate net worth - invalid result"
+                });
+            }
+
+            // Check if user has any accounts (optional business logic)
+            if (netWorth === 0) {
+                // This could be legitimate (zero balance) or no accounts
+                // You might want to distinguish between these cases
+                return res.json({
+                    success: true,
+                    message: "Total net worth calculated successfully",
+                    data: {
+                        netWorth: netWorth,
+                        formattedNetWorth: `$${netWorth.toFixed(2)}`,
+                        note: "Zero net worth - user may have no accounts or all balances sum to zero"
+                    }
+                });
+            }
+
+            res.json({
+                success: true,
+                message: "Total net worth calculated successfully",
+                data: {
+                    netWorth: netWorth,
+                    formattedNetWorth: `$${netWorth.toFixed(2)}`,
+                    isPositive: netWorth > 0,
+                    absoluteValue: Math.abs(netWorth)
+                }
+            });
+        } catch (error) {
+            console.error("Error fetching total net worth:", error);
+            
+            // Handle specific service errors
+            if (error instanceof Error) {
+                if (error.message.includes("not found")) {
+                    return res.status(404).json({ 
+                        error: "User not found",
+                        message: "No user found with the specified ID"
+                    });
+                }
+                if (error.message.includes("fetching total net worth")) {
+                    return res.status(500).json({ 
+                        error: "Database error",
+                        message: "Failed to retrieve account data for net worth calculation"
+                    });
+                }
+            }
+            
+            res.status(500).json({ 
+                error: "Internal server error",
+                message: "Failed to fetch total net worth"
+            });
+        }
+    },
+
+    getAccountBalanceHistory: async (req: Request, res: Response) => {
+        try {
+            const { userId } = req.params;
+            
+            // Validate userId parameter
+            if (!userId) {
+                return res.status(400).json({ 
+                    error: "userId parameter is required",
+                    message: "Please provide userId in the URL"
+                });
+            }
+
+            // Validate userId format
+            if (!mongoose.Types.ObjectId.isValid(userId)) {
+                return res.status(400).json({ 
+                    error: "Invalid userId format",
+                    message: "userId must be a valid MongoDB ObjectId"
+                });
+            }
+
+            const { startDate, endDate } = req.query;
+            
+            // Validate date parameters
+            if (!startDate || !endDate) {
+                return res.status(400).json({ 
+                    error: "Missing date parameters",
+                    message: "Please provide startDate and endDate in the query parameters"
+                });
+            }
+                
+            // Validate dates
+            const start = new Date(startDate as string);
+            const end = new Date(endDate as string);
+            
+            if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+            
+                return res.status(400).json({ 
+                    error: "Invalid date format",
+                    message: "Dates must be valid Date objects"
+                });
+            }
+
+            if (end <= start) {
+            
+                return res.status(400).json({ 
+                    error: "Invalid date range",
+                    message: "End date must be after start date"
+                });
+            }
+
+            const history = await getAccountBalanceHistory(new mongoose.Types.ObjectId(userId), start, end);
+            
+            res.json({
+                success: true,
+                message: "Account balance history fetched successfully",
+                data: history
+            });
+        } catch (error) {
+            console.error("Error fetching account balance history:", error);
+            res.status(500).json({ 
+                error: "Internal server error",
+                message: "Failed to fetch account balance history"
             });
         }
     }

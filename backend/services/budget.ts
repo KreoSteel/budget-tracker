@@ -50,3 +50,43 @@ export async function deleteBudget(id: string) {
         throw new Error("Error deleting budget");
     }
 }
+
+export async function getBudgetProgress(id: string) {
+    try {
+        const budget = await Budget.findById(id);
+        if (!budget) {
+            throw new Error("Budget not found");
+        }
+        
+        const totalAmount = budget.totalAmount;
+        if (totalAmount === 0) {
+            return 0; // Avoid division by zero
+        }
+        
+        const spentAmount = budget.categories.reduce((acc, category) => acc + category.spentAmount, 0);
+        const progress = (spentAmount / totalAmount) * 100;
+        return Math.min(progress, 100); // Cap at 100%
+    } catch (error) {
+        throw new Error("Error fetching budget progress");
+    }
+}
+
+export async function getBudgetAlerts(budgetId: string, userId: string) {
+    try {
+        const budget = await Budget.findById(budgetId);
+        if (!budget) {
+            throw new Error("Budget not found");
+        }
+        
+        // Filter categories where spending exceeds allocation
+        const alerts = budget.categories.filter((category) => 
+            category.spentAmount > category.allocatedAmount
+        );
+        
+        return alerts;
+    } catch (error) {
+        throw new Error("Error fetching budget alerts");
+    }
+}
+
+

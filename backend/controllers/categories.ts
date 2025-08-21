@@ -1,4 +1,4 @@
-import { getAllCategories, getCategoryById, createCategory, updateCategory, deleteCategory } from "../services/categories";
+import { getAllCategories, getCategoryById, createCategory, updateCategory, deleteCategory, getCategoryByUserId, getCategorySpending, getCategoryIncome } from "../services/categories";
 import { Request, Response } from "express";
 import { ObjectId } from "mongoose";
 import mongoose from "mongoose";
@@ -343,6 +343,163 @@ export const categoriesControllers = {
             res.status(500).json({ 
                 error: "Internal server error",
                 message: "Failed to delete category"
+            });
+        }
+    },
+
+    getCategoryByUserId: async (req: Request, res: Response) => {
+        try {
+            const { userId } = req.params;
+            
+            // Validate userId parameter
+            if (!userId) {
+                return res.status(400).json({ 
+                    error: "userId parameter is required",
+                    message: "Please provide userId in the URL"
+                });
+            }
+            
+            // Validate ObjectId format
+            if (!mongoose.Types.ObjectId.isValid(userId)) {
+                return res.status(400).json({ 
+                    error: "Invalid userId format",
+                    message: "userId must be a valid MongoDB ObjectId"
+                });
+            }
+
+            const categories = await getCategoryByUserId(userId);
+            
+            if (!categories || categories.length === 0) {
+                return res.status(404).json({ 
+                    error: "No categories found",
+                    message: "No categories exist for this user"
+                });
+            }
+
+            res.json({
+                success: true,
+                count: categories.length,
+                data: categories
+            });
+        } catch (error) {
+            console.error("Error fetching categories:", error);
+            res.status(500).json({ 
+                error: "Internal server error",
+                message: "Failed to fetch categories"
+            });
+        }
+    },
+
+    getCategorySpending: async (req: Request, res: Response) => {
+        try {
+            const { categoryId, userId } = req.params;
+            
+            // Validate parameters
+            if (!categoryId || !userId) {
+                return res.status(400).json({ 
+                    error: "Missing required parameters",
+                    required: ["categoryId", "userId"],
+                    message: "Please provide both categoryId and userId in the URL"
+                });
+            }
+            
+            // Validate ObjectId formats
+            if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+                return res.status(400).json({ 
+                    error: "Invalid categoryId format",
+                    message: "categoryId must be a valid MongoDB ObjectId"
+                });
+            }
+            
+            if (!mongoose.Types.ObjectId.isValid(userId)) {
+                return res.status(400).json({ 
+                    error: "Invalid userId format",
+                    message: "userId must be a valid MongoDB ObjectId"
+                });
+            }
+
+            const spending = await getCategorySpending(categoryId, userId);
+            
+            res.json({
+                success: true,
+                data: {
+                    categoryId,
+                    userId,
+                    totalSpending: spending
+                }
+            });
+        } catch (error) {
+            console.error("Error fetching category spending:", error);
+            
+            if (error instanceof Error) {
+                if (error.message.includes("Invalid userId format")) {
+                    return res.status(400).json({ 
+                        error: "Invalid userId format",
+                        message: error.message
+                    });
+                }
+            }
+            
+            res.status(500).json({ 
+                error: "Internal server error",
+                message: "Failed to fetch category spending"
+            });
+        }
+    },
+
+    getCategoryIncome: async (req: Request, res: Response) => {
+        try {
+            const { categoryId, userId } = req.params;
+            
+            // Validate parameters
+            if (!categoryId || !userId) {
+                return res.status(400).json({ 
+                    error: "Missing required parameters",
+                    required: ["categoryId", "userId"],
+                    message: "Please provide both categoryId and userId in the URL"
+                });
+            }
+            
+            // Validate ObjectId formats
+            if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+                return res.status(400).json({ 
+                    error: "Invalid categoryId format",
+                    message: "categoryId must be a valid MongoDB ObjectId"
+                });
+            }
+            
+            if (!mongoose.Types.ObjectId.isValid(userId)) {
+                return res.status(400).json({ 
+                    error: "Invalid userId format",
+                    message: "userId must be a valid MongoDB ObjectId"
+                });
+            }
+
+            const income = await getCategoryIncome(categoryId, userId);
+            
+            res.json({
+                success: true,
+                data: {
+                    categoryId,
+                    userId,
+                    totalIncome: income
+                }
+            });
+        } catch (error) {
+            console.error("Error fetching category income:", error);
+            
+            if (error instanceof Error) {
+                if (error.message.includes("Invalid userId format")) {
+                    return res.status(400).json({ 
+                        error: "Invalid userId format",
+                        message: error.message
+                    });
+                }
+            }
+            
+            res.status(500).json({ 
+                error: "Internal server error",
+                message: "Failed to fetch category income"
             });
         }
     }

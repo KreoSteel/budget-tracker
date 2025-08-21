@@ -5,9 +5,10 @@ const router = Router();
 
 router.get('/user/:userId', budgetsController.getBudgetsByUserId);
 router.get('/:id', budgetsController.getBudgetById);
+router.get('/:id/progress', budgetsController.getBudgetProgress);
+router.get('/:budgetId/alerts', budgetsController.getBudgetAlerts);
 router.put('/:id', budgetsController.updateBudget);
 router.post('/', budgetsController.createBudget);
 router.delete('/:id', budgetsController.deleteBudget);
-
 
 export { router as budgetsRouter };

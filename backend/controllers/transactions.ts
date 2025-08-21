@@ -1,4 +1,4 @@
-import { getAllTransactions, getTransactionById, createTransaction, deleteTransaction, updateTransaction } from "../services/transactions";
+import { getAllTransactions, getTransactionById, createTransaction, deleteTransaction, updateTransaction, getTransactionsByDateRange, getTransactionsByCategory, getTransactionsByAccount } from "../services/transactions";
 import { Request, Response } from "express";
 import Transaction from "../models/transaction";
 import mongoose from "mongoose";
@@ -413,6 +413,238 @@ export const transactionsControllers = {
             res.status(500).json({ 
                 error: "Internal server error",
                 message: "Failed to update transaction"
+            });
+        }
+    },
+
+    getTransactionsByDateRange: async (req: Request, res: Response) => {
+        try {
+            const { startDate, endDate, userId } = req.params;
+            
+            // Validate parameters
+            if (!startDate || !endDate || !userId) {
+                return res.status(400).json({ 
+                    error: "Missing required parameters",
+                    required: ["startDate", "endDate", "userId"],
+                    message: "Please provide startDate, endDate, and userId in the URL"
+                });
+            }
+            
+            // Validate userId format
+            if (!mongoose.Types.ObjectId.isValid(userId)) {
+                return res.status(400).json({ 
+                    error: "Invalid userId format",
+                    message: "userId must be a valid MongoDB ObjectId"
+                });
+            }
+            
+            // Validate date formats
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            
+            if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+                return res.status(400).json({ 
+                    error: "Invalid date format",
+                    message: "startDate and endDate must be valid date strings"
+                });
+            }
+            
+            if (start > end) {
+                return res.status(400).json({ 
+                    error: "Invalid date range",
+                    message: "startDate must be before or equal to endDate"
+                });
+            }
+
+            const transactions = await getTransactionsByDateRange(start, end, userId);
+            
+            res.json({
+                success: true,
+                count: transactions.length,
+                data: transactions
+            });
+        } catch (error) {
+            console.error("Error fetching transactions by date range:", error);
+            
+            if (error instanceof Error) {
+                if (error.message.includes("Invalid userId format")) {
+                    return res.status(400).json({ 
+                        error: "Invalid userId format",
+                        message: error.message
+                    });
+                }
+            }
+            
+            res.status(500).json({ 
+                error: "Internal server error",
+                message: "Failed to fetch transactions by date range"
+            });
+        }
+    },
+
+    getTransactionsByCategory: async (req: Request, res: Response) => {
+        try {
+            const { categoryId, period, userId } = req.params;
+            
+            // Validate parameters
+            if (!categoryId || !userId) {
+                return res.status(400).json({ 
+                    error: "Missing required parameters",
+                    required: ["categoryId", "userId"],
+                    message: "Please provide categoryId and userId in the URL"
+                });
+            }
+            
+            // Validate ObjectId formats
+            if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+                return res.status(400).json({ 
+                    error: "Invalid categoryId format",
+                    message: "categoryId must be a valid MongoDB ObjectId"
+                });
+            }
+            
+            if (!mongoose.Types.ObjectId.isValid(userId)) {
+                return res.status(400).json({ 
+                    error: "Invalid userId format",
+                    message: "userId must be a valid MongoDB ObjectId"
+                });
+            }
+
+            const transactions = await getTransactionsByCategory(categoryId, period || 'all', userId);
+            
+            res.json({
+                success: true,
+                count: transactions.length,
+                data: transactions
+            });
+        } catch (error) {
+            console.error("Error fetching transactions by category:", error);
+            
+            if (error instanceof Error) {
+                if (error.message.includes("Invalid userId format")) {
+                    return res.status(400).json({ 
+                        error: "Invalid userId format",
+                        message: error.message
+                    });
+                }
+            }
+            
+            res.status(500).json({ 
+                error: "Internal server error",
+                message: "Failed to fetch transactions by category"
+            });
+        }
+    },
+
+    getTransactionsByAccount: async (req: Request, res: Response) => {
+        try {
+            const { accountId, period, userId } = req.params;
+            
+            // Validate parameters
+            if (!accountId || !userId) {
+                return res.status(400).json({ 
+                    error: "Missing required parameters",
+                    required: ["accountId", "userId"],
+                    message: "Please provide accountId and userId in the URL"
+                });
+            }
+            
+            // Validate ObjectId formats
+            if (!mongoose.Types.ObjectId.isValid(accountId)) {
+                return res.status(400).json({ 
+                    error: "Invalid accountId format",
+                    message: "accountId must be a valid MongoDB ObjectId"
+                });
+            }
+            
+            if (!mongoose.Types.ObjectId.isValid(userId)) {
+                return res.status(400).json({ 
+                    error: "Invalid userId format",
+                    message: "userId must be a valid MongoDB ObjectId"
+                });
+            }
+
+            const transactions = await getTransactionsByAccount(accountId, period || 'all', userId);
+            
+            res.json({
+                success: true,
+                count: transactions.length,
+                data: transactions
+            });
+        } catch (error) {
+            console.error("Error fetching transactions by account:", error);
+            
+            if (error instanceof Error) {
+                if (error.message.includes("Invalid userId format")) {
+                    return res.status(400).json({ 
+                        error: "Invalid userId format",
+                        message: error.message
+                    });
+                }
+            }
+            
+            res.status(500).json({ 
+                error: "Internal server error",
+                message: "Failed to fetch transactions by account"
+            });
+        }
+    },
+
+    deleteTransaction: async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+            
+            // Validate id parameter
+            if (!id) {
+                return res.status(400).json({ 
+                    error: "Transaction ID parameter is required",
+                    message: "Please provide transaction ID in the URL"
+                });
+            }
+
+            // Validate ObjectId format
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+                return res.status(400).json({ 
+                    error: "Invalid transaction ID format",
+                    message: "Transaction ID must be a valid MongoDB ObjectId"
+                });
+            }
+
+            const deletedTransaction = await deleteTransaction(id);
+            if (!deletedTransaction) {
+                return res.status(404).json({ 
+                    error: "Transaction not found",
+                    message: "Transaction with the specified ID does not exist"
+                });
+            }
+
+            res.json({
+                success: true,
+                message: "Transaction deleted successfully",
+                data: deletedTransaction
+            });
+        } catch (error) {
+            console.error("Error deleting transaction:", error);
+            
+            // Handle specific service errors
+            if (error instanceof Error) {
+                if (error.message.includes("not found")) {
+                    return res.status(404).json({ 
+                        error: "Transaction not found",
+                        message: error.message
+                    });
+                }
+                if (error.message.includes("cannot delete")) {
+                    return res.status(400).json({ 
+                        error: "Cannot delete transaction",
+                        message: error.message
+                    });
+                }
+            }
+            
+            res.status(500).json({ 
+                error: "Internal server error",
+                message: "Failed to delete transaction"
             });
         }
     }
