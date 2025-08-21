@@ -1,0 +1,447 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+/* Professional Font Variables */
+:root {
+  /* Primary Fonts */
+  --font-inter: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-open-sans: "Open Sans", sans-serif;
+  --font-source-sans: "Source Sans Pro", sans-serif;
+  --font-work-sans: "Work Sans", sans-serif;
+  
+  /* Font Weights */
+  --font-light: 300;
+  --font-regular: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  
+  /* Font Sizes */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  
+  /* Primary Background Colors */
+  --color-background-dark-primary: #1A1A2E;      /* Sidebar background */
+  --color-background-dark-secondary: #0f1927;    /* Main content area top-left */
+  --color-background-dark-tertiary: #281A3B;     /* Main content area bottom-right */
+  --color-background-light: #FFFFFF;              /* Light mode background */
+  --color-background-light-secondary: #F8FAFC;   /* Light mode secondary */
+  
+  /* Text Colors */
+  --color-text-light: #FFFFFF;                   /* White text */
+  --color-text-dark: #1A1A2E;                    /* Dark text */
+  --color-text-muted: #94A3B8;                   /* Muted text */
+  --color-text-accent: #E2E8F0;                  /* Accent text */
+  
+  /* Primary Gradient Colors */
+  --color-gradient-blue: #4A90E2;                /* Start of active item gradient */
+  --color-gradient-purple: #8A2BE2;              /* End of active item gradient */
+  --color-gradient-cyan: #00D4FF;                /* Cyan accent */
+  --color-gradient-pink: #FF6B9D;                /* Pink accent */
+  --color-gradient-indigo: #6366F1;              /* Indigo accent */
+
+  /* Accent Colors */
+  --color-highlight-pink-purple: #FF00FF;        /* Sidebar separator line */
+  --color-accent-purple: #9B59B6;                /* Purple accent */
+  --color-accent-pink: #E74C3C;                  /* Pink accent */
+  --color-accent-cyan: #00FFFF;                  /* Cyan accent */
+  --color-accent-orange: #FF6B35;                /* Orange accent */
+  --color-accent-yellow: #FFD700;                /* Yellow accent */
+  
+  /* Icon Colors */
+  --color-icon-blue: #3498DB;                    /* Accounts icon */
+  --color-icon-yellow: #F1C40F;                  /* Transactions icon */
+  --color-icon-orange: #E67E22;                  /* Categories icon */
+  --color-icon-purple: #9B59B6;                  /* Budgets icon */
+  --color-icon-star-yellow: #FFD700;             /* Goals icon */
+  --color-icon-success: #10B981;                 /* Success/positive */
+  --color-icon-warning: #F59E0B;                 /* Warning */
+  --color-icon-danger: #EF4444;                  /* Danger/negative */
+  
+  /* Semantic Colors for Budget Tracking */
+  --color-income: #10B981;                       /* Income/green */
+  --color-expense: #EF4444;                      /* Expense/red */
+  --color-savings: #3B82F6;                      /* Savings/blue */
+  --color-investment: #8B5CF6;                   /* Investment/purple */
+  --color-debt: #F59E0B;                         /* Debt/orange */
+  --color-emergency: #EC4899;                    /* Emergency fund/pink */
+  
+  /* Status Colors */
+  --color-success: #10B981;                      /* Success state */
+  --color-warning: #F59E0B;                      /* Warning state */
+  --color-error: #EF4444;                        /* Error state */
+  --color-info: #3B82F6;                         /* Info state */
+  
+  /* Chart Colors */
+  --color-chart-1: #4A90E2;                      /* Chart color 1 */
+  --color-chart-2: #8A2BE2;                      /* Chart color 2 */
+  --color-chart-3: #00D4FF;                      /* Chart color 3 */
+  --color-chart-4: #FF6B9D;                      /* Chart color 4 */
+  --color-chart-5: #FFD700;                      /* Chart color 5 */
+  --color-chart-6: #10B981;                      /* Chart color 6 */
+  
+  /* Border Colors */
+  --color-border-light: #E2E8F0;                 /* Light borders */
+  --color-border-dark: #334155;                  /* Dark borders */
+  --color-border-accent: #FF00FF;                /* Accent borders */
+  
+  /* Shadow Colors */
+  --color-shadow-light: rgba(0, 0, 0, 0.1);     /* Light shadows */
+  --color-shadow-dark: rgba(0, 0, 0, 0.3);      /* Dark shadows */
+  --color-shadow-glow: rgba(74, 144, 226, 0.3); /* Glow shadows */
+  
+  /* Sidebar Specific Colors */
+  --color-sidebar-bg: var(--color-background-dark-primary);
+  --color-sidebar-active: linear-gradient(135deg, var(--color-gradient-blue), var(--color-gradient-purple));
+  --color-sidebar-separator: var(--color-highlight-pink-purple);
+  --color-sidebar-text: var(--color-text-light);
+  --color-sidebar-text-muted: var(--color-text-muted);
+  --color-sidebar-hover: rgba(255, 255, 255, 0.1);
+}
+
+/* Dark Mode Overrides */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background-primary: var(--color-background-dark-primary);
+    --color-background-secondary: var(--color-background-dark-secondary);
+    --color-background-tertiary: var(--color-background-dark-tertiary);
+    --color-text-primary: var(--color-text-light);
+    --color-text-secondary: var(--color-text-accent);
+    --color-border-primary: var(--color-border-dark);
+  }
+}
+
+/* Light Mode Overrides */
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-background-primary: var(--color-background-light);
+    --color-background-secondary: var(--color-background-light-secondary);
+    --color-background-tertiary: var(--color-background-light);
+    --color-text-primary: var(--color-text-dark);
+    --color-text-secondary: var(--color-text-muted);
+    --color-border-primary: var(--color-border-light);
+  }
+}
+
+html,
+body {
+  @apply bg-white dark:bg-gray-950;
+
+  @media (prefers-color-scheme: dark) {
+    color-scheme: dark;
+  }
+}
+
+/* Custom CSS Classes for Budget Tracker */
+.sidebar-gradient-bg {
+  background: var(--color-sidebar-bg);
+}
+
+.sidebar-active-item {
+  background: var(--color-sidebar-active);
+  color: var(--color-sidebar-text);
+}
+
+.sidebar-separator {
+  border-color: var(--color-sidebar-separator);
+}
+
+/* Animated Logo Gradient */
+.logo-gradient-animated {
+  background: linear-gradient(
+    45deg,
+    var(--color-gradient-blue),
+    var(--color-gradient-purple),
+    var(--color-gradient-cyan),
+    var(--color-gradient-pink),
+    var(--color-gradient-indigo)
+  );
+  background-size: 300% 300%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: logo-gradient-shift 8s ease infinite;
+  font-weight: 700;
+}
+
+@keyframes logo-gradient-shift {
+  0% { background-position: 0% 50%; }
+  25% { background-position: 100% 50%; }
+  50% { background-position: 100% 100%; }
+  75% { background-position: 0% 100%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Logo Glow Effect */
+.logo-gradient-animated {
+  filter: drop-shadow(0 0 20px rgba(74, 144, 226, 0.5))
+          drop-shadow(0 0 40px rgba(138, 43, 226, 0.3));
+}
+
+/* Override Sidebar Icon Sizing - Allow Custom Sizes */
+.sidebar-menu-item-fixed svg,
+.sidebar-menu-hover svg {
+  width: auto !important;
+  height: auto !important;
+  min-width: auto !important;
+  min-height: auto !important;
+}
+
+/* Fixed Sidebar Menu Item - Prevents Layout Shifts */
+.sidebar-menu-item-fixed {
+  transition: all 0.3s ease;
+}
+
+.sidebar-menu-item-fixed:active {
+  transition: all 0.1s ease;
+  scale: 0.95;
+}
+
+.sidebar-menu-item-fixed:hover {
+  outline: 2px solid var(--color-gradient-blue);
+  outline-offset: -2px;
+  background: linear-gradient(135deg, 
+    rgba(74, 144, 226, 0.1), 
+    rgba(138, 43, 226, 0.1)
+  );
+  transform: translateX(8px);
+  box-shadow: 0 4px 20px rgba(74, 144, 226, 0.3);
+}
+
+/* Hover Gradient Effects */
+.sidebar-menu-hover {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.sidebar-menu-hover::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(74, 144, 226, 0.2), 
+    rgba(138, 43, 226, 0.2), 
+    transparent
+  );
+  transition: left 0.5s ease;
+}
+
+.sidebar-menu-hover:hover::before {
+  left: 100%;
+}
+
+.sidebar-menu-hover:hover {
+  background: linear-gradient(135deg, 
+    rgba(74, 144, 226, 0.1), 
+    rgba(138, 43, 226, 0.1), 
+    rgba(0, 212, 255, 0.1)
+  );
+  transform: translateX(8px);
+  box-shadow: 0 4px 20px rgba(74, 144, 226, 0.3);
+}
+
+/* Animated Gradient Border */
+.sidebar-menu-hover-animated {
+  position: relative;
+  background: var(--color-sidebar-bg);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.sidebar-menu-hover-animated::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 2px;
+  background: linear-gradient(45deg, 
+    var(--color-gradient-blue), 
+    var(--color-gradient-purple), 
+    var(--color-gradient-cyan), 
+    var(--color-gradient-pink)
+  );
+  border-radius: 12px;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.sidebar-menu-hover-animated:hover::before {
+  opacity: 1;
+}
+
+.sidebar-menu-hover-animated:hover {
+  background: linear-gradient(135deg, 
+    rgba(74, 144, 226, 0.15), 
+    rgba(138, 43, 226, 0.15)
+  );
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(74, 144, 226, 0.4);
+}
+
+/* Glow Effect on Hover */
+.sidebar-menu-glow {
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.sidebar-menu-glow:hover {
+  background: linear-gradient(135deg, 
+    rgba(74, 144, 226, 0.2), 
+    rgba(138, 43, 226, 0.2)
+  );
+  box-shadow: 
+    0 0 20px rgba(74, 144, 226, 0.4),
+    0 0 40px rgba(138, 43, 226, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transform: scale(1.02);
+}
+
+/* Rainbow Gradient on Hover */
+.sidebar-menu-rainbow {
+  transition: all 0.4s ease;
+  position: relative;
+}
+
+.sidebar-menu-rainbow:hover {
+  background: linear-gradient(45deg, 
+    #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57, #ff9ff3
+  );
+  background-size: 300% 300%;
+  animation: rainbow-shift 2s ease infinite;
+  color: white;
+  transform: translateX(10px);
+}
+
+@keyframes rainbow-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Neon Glow Effect */
+.sidebar-menu-neon {
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.sidebar-menu-neon:hover {
+  background: rgba(74, 144, 226, 0.1);
+  border-color: var(--color-gradient-blue);
+  box-shadow: 
+    0 0 10px rgba(74, 144, 226, 0.5),
+    0 0 20px rgba(74, 144, 226, 0.3),
+    0 0 30px rgba(74, 144, 226, 0.1);
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+}
+
+.income-card {
+  background: var(--color-income);
+  color: var(--color-text-light);
+}
+
+.expense-card {
+  background: var(--color-expense);
+  color: var(--color-text-light);
+}
+
+.savings-card {
+  background: var(--color-savings);
+  color: var(--color-text-light);
+}
+
+.investment-card {
+  background: var(--color-investment);
+  color: var(--color-text-light);
+}
+
+.debt-card {
+  background: var(--color-debt);
+  color: var(--color-text-light);
+}
+
+.emergency-card {
+  background: var(--color-emergency);
+  color: var(--color-text-light);
+}
+
+/* Font Utility Classes */
+.font-inter {
+  font-family: var(--font-inter);
+}
+
+.font-open-sans {
+  font-family: var(--font-open-sans);
+}
+
+.font-source-sans {
+  font-family: var(--font-source-sans);
+}
+
+.font-work-sans {
+  font-family: var(--font-work-sans);
+}
+
+/* Font Weight Utilities */
+.font-light {
+  font-weight: var(--font-light);
+}
+
+.font-regular {
+  font-weight: var(--font-regular);
+}
+
+.font-medium {
+  font-weight: var(--font-medium);
+}
+
+.font-semibold {
+  font-weight: var(--font-semibold);
+}
+
+.font-bold {
+  font-weight: var(--font-bold);
+}
+
+/* Typography Scale */
+.text-xs {
+  font-size: var(--text-xs);
+}
+
+.text-sm {
+  font-size: var(--text-sm);
+}
+
+.text-base {
+  font-size: var(--text-base);
+}
+
+.text-lg {
+  font-size: var(--text-lg);
+}
+
+.text-xl {
+  font-size: var(--text-xl);
+}
+
+.text-2xl {
+  font-size: var(--text-2xl);
+}
+
+.text-3xl {
+  font-size: var(--text-3xl);
+}
