@@ -1,5 +1,6 @@
 import express, { response } from "express";
 import { Request, Response } from "express";
+import cors from "cors";
 import connectDB from "./db";
 import accountsRouter from "./routes/account";
 import usersRouter from "./routes/users";
@@ -11,6 +12,7 @@ import goalsRouter from "./routes/goals";
 const app = express()
 connectDB();
 app.use(express.json());
+app.use(cors());
 
 app.use("/users", usersRouter);
 app.use("/accounts", accountsRouter);

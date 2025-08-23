@@ -35,11 +35,12 @@
   --color-background-dark-tertiary: #281A3B;     /* Main content area bottom-right */
   --color-background-light: #FFFFFF;              /* Light mode background */
   --color-background-light-secondary: #F8FAFC;   /* Light mode secondary */
+  --color-card-background: #1E2939;
   
   /* Text Colors */
   --color-text-light: #FFFFFF;                   /* White text */
   --color-text-dark: #1A1A2E;                    /* Dark text */
-  --color-text-muted: #94A3B8;                   /* Muted text */
+  --color-text-muted: #cbd1da;                   /* Muted text */
   --color-text-accent: #E2E8F0;                  /* Accent text */
   
   /* Primary Gradient Colors */
@@ -173,6 +174,71 @@ body {
   font-weight: 700;
 }
 
+/* Sidebar Gradient Outline Effects */
+.sidebar-gradient-outline-left {
+  position: relative !important;
+}
+
+.sidebar-gradient-outline-left::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(
+    180deg,
+    var(--color-gradient-blue),
+    var(--color-gradient-purple),
+    var(--color-gradient-cyan),
+    var(--color-gradient-pink),
+    var(--color-gradient-indigo)
+  );
+  box-shadow: 
+    0 0 10px rgba(74, 144, 226, 0.8),
+    0 0 15px rgba(138, 43, 226, 0.6),
+    0 0 18px rgba(0, 212, 255, 0.4);
+  background-size: 300% 300%;
+  animation: sidebar-gradient-shift 6s ease infinite;
+  z-index: 10;
+}
+
+.sidebar-gradient-outline-right {
+  position: relative !important;
+}
+
+.sidebar-gradient-outline-right::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(
+    180deg,
+    var(--color-gradient-blue),
+    var(--color-gradient-purple),
+    var(--color-gradient-cyan),
+    var(--color-gradient-pink),
+    var(--color-gradient-indigo)
+  );
+  background-size: 100% 300%;
+  animation: sidebar-gradient-shift 6s ease infinite;
+  box-shadow: 
+    0 0 15px rgba(74, 144, 226, 0.8),
+    0 0 30px rgba(138, 43, 226, 0.6),
+    0 0 45px rgba(0, 212, 255, 0.4);
+  z-index: 10;
+}
+
+@keyframes sidebar-gradient-shift {
+  0% { background-position: 0% 0%; }
+  25% { background-position: 0% 50%; }
+  50% { background-position: 0% 100%; }
+  75% { background-position: 0% 50%; }
+  100% { background-position: 0% 0%; }
+}
+
 @keyframes logo-gradient-shift {
   0% { background-position: 0% 50%; }
   25% { background-position: 100% 50%; }
@@ -213,7 +279,7 @@ body {
     rgba(74, 144, 226, 0.1), 
     rgba(138, 43, 226, 0.1)
   );
-  transform: translateX(8px);
+  transform: translateX(10px);
   box-shadow: 0 4px 20px rgba(74, 144, 226, 0.3);
 }
 
@@ -221,7 +287,7 @@ body {
 .sidebar-menu-hover {
   position: relative;
   overflow: hidden;
-  transition: all 0.3s ease;
+  transition: all 0.35s ease-in-out;
 }
 
 .sidebar-menu-hover::before {
@@ -237,7 +303,7 @@ body {
     rgba(138, 43, 226, 0.2), 
     transparent
   );
-  transition: left 0.5s ease;
+  transition: left 0.4s ease-in-out;
 }
 
 .sidebar-menu-hover:hover::before {
@@ -250,7 +316,7 @@ body {
     rgba(138, 43, 226, 0.1), 
     rgba(0, 212, 255, 0.1)
   );
-  transform: translateX(8px);
+  transform: translateX(20px);
   box-shadow: 0 4px 20px rgba(74, 144, 226, 0.3);
 }
 

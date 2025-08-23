@@ -1,14 +1,22 @@
-import { getAllTransactions, getTransactionById, createTransaction, deleteTransaction, updateTransaction, getTransactionsByDateRange, getTransactionsByCategory, getTransactionsByAccount } from "../services/transactions";
+import { getAllTransactions, getRecentTransactions, getTransactionById, createTransaction, deleteTransaction, updateTransaction, getTransactionsByDateRange, getTransactionsByCategory, getTransactionsByAccount, getFinancialMetrics } from "../services/transactions";
 import { Request, Response } from "express";
 import Transaction from "../models/transaction";
 import mongoose from "mongoose";
+import { createPaginatedResponse, applyPagination } from "../middleware/pagination";
 const { ObjectId } = mongoose.Types;
 
 export const transactionsControllers = {
     getAllTransactions: async (req: Request, res: Response) => {
         try {
             // Validate query parameters if they exist
-            const { userId, accountId, categoryId, type, startDate, endDate } = req.query;
+            const { 
+                userId, 
+                accountId, 
+                categoryId, 
+                type, 
+                startDate, 
+                endDate
+            } = req.query;
             
             // Validate userId if provided
             if (userId && !mongoose.Types.ObjectId.isValid(userId as string)) {
@@ -58,20 +66,44 @@ export const transactionsControllers = {
                 });
             }
 
-            const transactions = await getAllTransactions();
+            // Build query object
+            const query: any = {};
+            if (userId) query.userId = new ObjectId(userId as string);
+            if (accountId) query.accountId = new ObjectId(accountId as string);
+            if (categoryId) query.categoryId = new ObjectId(categoryId as string);
+            if (type) query.type = type;
+            if (startDate || endDate) {
+                query.date = {};
+                if (startDate) query.date.$gte = new Date(startDate as string);
+                if (endDate) query.date.$lte = new Date(endDate as string);
+            }
+
+            // Sort is now handled by pagination middleware
+
+            // Use global pagination from middleware
+            if (!req.pagination) {
+                return res.status(400).json({
+                    error: "Pagination middleware not applied",
+                    message: "Please ensure pagination middleware is applied to this route"
+                });
+            }
+
+            const { data, totalCount } = await applyPagination(
+                query,
+                req.pagination,
+                Transaction
+            );
             
-            if (!transactions || transactions.length === 0) {
+            if (!data || data.length === 0) {
                 return res.status(404).json({ 
                     error: "No transactions found",
                     message: "No transactions match the specified criteria"
                 });
             }
 
-            res.json({
-                success: true,
-                count: transactions.length,
-                data: transactions
-            });
+            // Create paginated response using utility function
+            const response = createPaginatedResponse(data, req.pagination, totalCount);
+            res.json(response);
         } catch (error) {
             console.error("Error fetching transactions", error);
             res.status(500).json({ 
@@ -118,6 +150,75 @@ export const transactionsControllers = {
             res.status(500).json({ 
                 error: "Internal server error",
                 message: "Failed to fetch transaction"
+            });
+        }
+    },
+
+    getRecentTransactions: async (req: Request, res: Response) => {
+        try {
+            const { userId, limit = '5', days = '30' } = req.query;
+            
+            // Validate userId parameter
+            if (!userId) {
+                return res.status(400).json({ 
+                    error: "UserId parameter is required",
+                    message: "Please provide userId in query parameters"
+                });
+            }
+            
+            if (!mongoose.Types.ObjectId.isValid(userId as string)) {
+                return res.status(400).json({ 
+                    error: "Invalid userId format",
+                    message: "userId must be a valid MongoDB ObjectId"
+                });
+            }
+            
+            // Validate limit parameter
+            const limitNum = parseInt(limit as string, 10);
+            if (isNaN(limitNum) || limitNum < 1 || limitNum > 50) {
+                return res.status(400).json({ 
+                    error: "Invalid limit parameter",
+                    message: "Limit must be between 1 and 50"
+                });
+            }
+            
+            // Validate days parameter
+            const daysNum = parseInt(days as string, 10);
+            if (isNaN(daysNum) || daysNum < 1 || daysNum > 365) {
+                return res.status(400).json({ 
+                    error: "Invalid days parameter",
+                    message: "Days must be between 1 and 365"
+                });
+            }
+            
+            const transactions = await getRecentTransactions(
+                userId as string,
+                limitNum,
+                daysNum
+            );
+            
+            if (!transactions || transactions.length === 0) {
+                return res.status(404).json({ 
+                    error: "No recent transactions found",
+                    message: "No transactions found for the specified user and time period"
+                });
+            }
+            
+            res.json({
+                success: true,
+                count: transactions.length,
+                data: transactions,
+                query: {
+                    userId,
+                    limit: limitNum,
+                    days: daysNum
+                }
+            });
+        } catch (error) {
+            console.error("Error fetching recent transactions", error);
+            res.status(500).json({ 
+                error: "Internal server error",
+                message: "Failed to fetch recent transactions"
             });
         }
     },
@@ -645,6 +746,32 @@ export const transactionsControllers = {
             res.status(500).json({ 
                 error: "Internal server error",
                 message: "Failed to delete transaction"
+            });
+        }
+    },
+
+    getFinancialMetrics: async (req: Request, res: Response) => {
+        try {
+            const { userId } = req.params; // Use path parameter, not query
+            const { period = 'month' } = req.query;
+            
+            if (!userId) {
+                return res.status(400).json({
+                    error: "UserId parameter is required"
+                });
+            }
+            
+            const metrics = await getFinancialMetrics(userId, period as string);
+            
+            res.json({
+                success: true,
+                data: metrics
+            });
+        } catch (error) {
+            console.error("Error fetching financial metrics:", error);
+            res.status(500).json({
+                error: "Internal server error",
+                message: "Failed to fetch financial metrics"
             });
         }
     }
