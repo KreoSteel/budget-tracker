@@ -11,6 +11,15 @@ export async function getAllAccounts() {
   }
 }
 
+export async function getAccountByUserId(userId: mongoose.Types.ObjectId) {
+  try {
+    const accounts = await Account.find({ userId });
+    return accounts;
+  } catch (error) {
+    throw new Error("Error fetching accounts");
+  }
+}
+
 export async function getAccountById(id: string) {
   try {
     const account = await Account.findById(id);

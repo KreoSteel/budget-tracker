@@ -16,6 +16,20 @@ const useAccounts = () => {
     return {data, isPending, error};
 }
 
+const useAccountByUserId = (userId?: string, options?: {
+    limit?: number;
+}) => {
+    const { limit = 5 } = options || {};
+    return useQuery({
+        queryKey: ["accounts", userId, limit],
+        queryFn: async (): Promise<Account[]> => {
+            const response = await http.get(`/accounts/user/${userId}`);
+            return response.data.data;
+        },
+        enabled: !!userId,
+    });
+};
+
 const useCreateAccount = () => {
     const client = useQueryClient();
     const {mutate, isPending, error} = useMutation({
@@ -42,4 +56,4 @@ const useGetNetWorth = (userId: string | undefined) => {
 };
 
 
-export { useAccounts, useCreateAccount, useGetNetWorth };
+export { useAccounts, useCreateAccount, useGetNetWorth, useAccountByUserId };

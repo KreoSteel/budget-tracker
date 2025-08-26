@@ -10,6 +10,18 @@ export function getAllGoals() {
     }
 }
 
+export function getGoalsByUserId(userId: string, limit?: number) {
+    try {
+        let query = Goal.find({ userId: new Types.ObjectId(userId) });
+        if (limit) {
+            query = query.limit(limit);
+        }
+        return query;
+    } catch (error) {
+        throw new Error("Failed to get goals by user id");
+    }
+}
+
 export function getGoalById(id: string) {
     try {
         return Goal.findById(id);
@@ -46,6 +58,7 @@ export function deleteGoal(id: string) {
 
 export default {
     getAllGoals,
+    getGoalsByUserId,
     getGoalById,
     createGoal,
     updateGoal,

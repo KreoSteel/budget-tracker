@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { createAccount, getAllAccounts, getAccountById, getAccountsByUserId, getAccountsByType, deleteAccount, deactivateAccount, activateAccount, transferBetweenAccounts, getTotalNetWorth, getAccountBalanceHistory } from "../services/account";
+import { createAccount, getAllAccounts, getAccountById, getAccountsByUserId, getAccountsByType, deleteAccount, deactivateAccount, activateAccount, transferBetweenAccounts, getTotalNetWorth, getAccountBalanceHistory, getAccountByUserId } from "../services/account";
 import mongoose from "mongoose";
 
 export const accountsControllers = {
@@ -24,6 +24,48 @@ export const accountsControllers = {
             res.status(500).json({ 
                 error: "Internal server error",
                 message: "Failed to fetch accounts"
+            });
+        }
+    },
+
+    getAccountByUserId: async (req: Request, res: Response) => {
+        try {
+            const { userId } = req.query;
+
+            // Validate userId presence
+            if (!userId) {
+                return res.status(400).json({
+                    error: "Missing userId parameter",
+                    message: "Please provide userId in the query parameters"
+                });
+            }
+
+            // Validate userId format
+            if (typeof userId !== "string" || !mongoose.Types.ObjectId.isValid(userId)) {
+                return res.status(400).json({
+                    error: "Invalid userId format",
+                    message: "userId must be a valid MongoDB ObjectId"
+                });
+            }
+
+            const accounts = await getAccountByUserId(new mongoose.Types.ObjectId(userId));
+            if (!accounts || accounts.length === 0) {
+                return res.status(404).json({
+                    error: "No accounts found",
+                    message: "No accounts exist for this user"
+                });
+            }
+
+            res.json({
+                success: true,
+                count: accounts.length,
+                data: accounts
+            });
+        } catch (error) {
+            console.error("Error fetching account by user ID:", error);
+            res.status(500).json({ 
+                error: "Internal server error",
+                message: "Failed to fetch account by user ID"
             });
         }
     },

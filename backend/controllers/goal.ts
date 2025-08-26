@@ -1,4 +1,4 @@
-import { getAllGoals, getGoalById, createGoal, updateGoal, deleteGoal } from "../services/goal";
+import { getAllGoals, getGoalById, createGoal, updateGoal, deleteGoal, getGoalsByUserId } from "../services/goal";
 import { Request, Response } from "express";
 
 export const goalsControllers = {
@@ -32,6 +32,23 @@ export const goalsControllers = {
             });
         }
     },
+    getGoalsByUserId: async (req: Request, res: Response) => {
+        try {
+            const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+            const goals = await getGoalsByUserId(req.params.userId, limit);
+            res.status(200).json({
+                success: true,
+                data: goals
+            });
+        } catch (error) {
+            console.error("Error getting goals by user id:", error);
+            res.status(500).json({
+                success: false,
+                error: "Failed to get goals by user id"
+            });
+        }
+    },
+
     createGoal: async (req: Request, res: Response) => {
         try {
             const goal = await createGoal(req.body);

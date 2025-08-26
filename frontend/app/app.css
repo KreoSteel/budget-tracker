@@ -148,8 +148,126 @@ body {
 }
 
 .sidebar-active-item {
-  background: var(--color-sidebar-active);
+  background: linear-gradient(135deg, var(--color-gradient-blue), var(--color-gradient-purple), var(--color-gradient-cyan), var(--color-gradient-pink), var(--color-gradient-indigo));
   color: var(--color-sidebar-text);
+}
+
+
+
+/* Sidebar menu item transitions */
+.sidebar-menu-item-fixed {
+  transition: all 0.3s ease;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  position: relative;
+}
+
+.sidebar-menu-item-fixed:hover {
+  transform: translateX(4px);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-menu-item-fixed[data-active="true"] {
+  transform: translateX(4px);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Ensure active state is visible on the menu item container */
+.sidebar-menu-item-fixed:has([data-active="true"]) {
+  transform: translateX(4px);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+}
+
+/* Alternative way to style active menu items */
+.sidebar-menu-item-fixed[data-active="true"] {
+  transform: translateX(4px);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+/* Enhanced hover effects for sidebar menu items */
+.sidebar-menu-item-fixed:hover:not(:has([data-active="true"])):not([data-active="true"]) {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+}
+
+/* Active state with better visual feedback */
+.sidebar-menu-item-fixed[data-active="true"] .sidebar-menu-button {
+  background: transparent !important;
+  background-image: none !important;
+  background-color: transparent !important;
+  color: var(--color-text-light) !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  border-radius: 12px !important;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+/* Override any gradient styles from the component library */
+.sidebar-menu-item-fixed[data-active="true"] .sidebar-menu-button,
+.sidebar-menu-item-fixed[data-active="true"] button[data-sidebar="menu-button"],
+.sidebar-menu-item-fixed[data-active="true"] [data-sidebar="menu-button"] {
+  background: transparent !important;
+  background-image: none !important;
+  background-color: transparent !important;
+  background-size: unset !important;
+  animation: none !important;
+}
+
+/* Make the entire menu item clickable */
+.sidebar-menu-item-fixed .sidebar-menu-button {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+/* Smooth transitions for all interactive elements */
+.sidebar-menu-item-fixed * {
+  transition: all 0.2s ease;
+}
+
+/* Hover effect for the entire menu item */
+.sidebar-menu-item-fixed:hover {
+  cursor: pointer;
+}
+
+/* Ensure proper spacing and alignment */
+.sidebar-menu-item-fixed {
+  position: relative;
+  z-index: 1;
+}
+
+/* Active state container styling */
+.sidebar-menu-item-fixed[data-active="true"] {
+  z-index: 2;
+}
+
+/* Add border to the sidebar */
+.sidebar {
+  border-right: 1px solid var(--color-border-dark);
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+}
+
+
+@keyframes sidebar-active-gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .sidebar-separator {
@@ -174,70 +292,7 @@ body {
   font-weight: 700;
 }
 
-/* Sidebar Gradient Outline Effects */
-.sidebar-gradient-outline-left {
-  position: relative !important;
-}
 
-.sidebar-gradient-outline-left::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 3px;
-  height: 100%;
-  background: linear-gradient(
-    180deg,
-    var(--color-gradient-blue),
-    var(--color-gradient-purple),
-    var(--color-gradient-cyan),
-    var(--color-gradient-pink),
-    var(--color-gradient-indigo)
-  );
-  box-shadow: 
-    0 0 10px rgba(74, 144, 226, 0.8),
-    0 0 15px rgba(138, 43, 226, 0.6),
-    0 0 18px rgba(0, 212, 255, 0.4);
-  background-size: 300% 300%;
-  animation: sidebar-gradient-shift 6s ease infinite;
-  z-index: 10;
-}
-
-.sidebar-gradient-outline-right {
-  position: relative !important;
-}
-
-.sidebar-gradient-outline-right::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 3px;
-  height: 100%;
-  background: linear-gradient(
-    180deg,
-    var(--color-gradient-blue),
-    var(--color-gradient-purple),
-    var(--color-gradient-cyan),
-    var(--color-gradient-pink),
-    var(--color-gradient-indigo)
-  );
-  background-size: 100% 300%;
-  animation: sidebar-gradient-shift 6s ease infinite;
-  box-shadow: 
-    0 0 15px rgba(74, 144, 226, 0.8),
-    0 0 30px rgba(138, 43, 226, 0.6),
-    0 0 45px rgba(0, 212, 255, 0.4);
-  z-index: 10;
-}
-
-@keyframes sidebar-gradient-shift {
-  0% { background-position: 0% 0%; }
-  25% { background-position: 0% 50%; }
-  50% { background-position: 0% 100%; }
-  75% { background-position: 0% 50%; }
-  100% { background-position: 0% 0%; }
-}
 
 @keyframes logo-gradient-shift {
   0% { background-position: 0% 50%; }
@@ -316,7 +371,6 @@ body {
     rgba(138, 43, 226, 0.1), 
     rgba(0, 212, 255, 0.1)
   );
-  transform: translateX(20px);
   box-shadow: 0 4px 20px rgba(74, 144, 226, 0.3);
 }
 
@@ -388,9 +442,8 @@ body {
     #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57, #ff9ff3
   );
   background-size: 300% 300%;
-  animation: rainbow-shift 2s ease infinite;
   color: white;
-  transform: translateX(10px);
+
 }
 
 @keyframes rainbow-shift {
