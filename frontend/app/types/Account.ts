@@ -1,4 +1,4 @@
-export interface Account {
+export type Account = {
     _id: string;
     name: string;
     type: string;
@@ -9,4 +9,16 @@ export interface Account {
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
+}
+
+
+export type TransferMoney = {
+    fromAccountId: string;
+    toAccountId: string;
+    amount: number;
+}
+
+export type TransferMoneyResponse = {
+    message: string;
+    type: 'success' | 'error';
 }

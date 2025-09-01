@@ -2,122 +2,104 @@ import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { Separator } from "~/components/ui/separator";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "~/components/ui/dialog";
-import { LogIn } from "lucide-react";
+import { authService } from "~/services/authService";
+import type { LoginCredentials } from "~/services/authService";
 
 interface LoginDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onLogin: (email: string, password: string) => Promise<boolean>;
-  onSwitchToRegister: () => void;
-  isLoading?: boolean;
-  error?: string | null;
+  onLoginSuccess: (user: any) => void;
 }
 
 export function LoginDialog({
   open,
   onOpenChange,
-  onLogin,
-  onSwitchToRegister,
-  isLoading = false,
-  error = null,
+  onLoginSuccess,
 }: LoginDialogProps) {
-  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await onLogin(formData.email, formData.password);
-    if (success) {
-      setFormData({ email: '', password: '' });
-    }
-  };
+    setIsLoading(true);
+    setError(null);
 
-  const handleSwitchToRegister = () => {
-    onSwitchToRegister();
-    setFormData({ email: '', password: '' });
+    const credentials: LoginCredentials = { email, password };
+    const result = await authService.login(credentials);
+
+    if (result.success && result.user) {
+      setEmail("");
+      setPassword("");
+      onLoginSuccess(result.user);
+      onOpenChange(false);
+    } else {
+      setError(result.error || 'Login failed');
+    }
+
+    setIsLoading(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-semibold text-[var(--color-text-light)]">
-            Welcome Back
-          </DialogTitle>
-          <DialogDescription className="text-[var(--color-text-muted)]">
-            Sign in to your Finance Tracker account
+          <DialogTitle>Login</DialogTitle>
+          <DialogDescription>
+            Enter your credentials to access your account.
           </DialogDescription>
         </DialogHeader>
-        
-        <div className="mt-6">
-          {error && (
-            <div className="mb-4 p-3 bg-[var(--color-error-light)] border border-[var(--color-error-dark)] text-[var(--color-error-dark)] rounded-lg text-sm">
-              {error}
-            </div>
-          )}
-          
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-[var(--color-text-light)]">
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="email" className="text-right">
                 Email
               </Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="Enter your email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="border-[var(--color-border-dark)] focus:border-[var(--color-primary)] focus:ring-[var(--color-primary)]"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="col-span-3"
                 required
+                disabled={isLoading}
               />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium text-[var(--color-text-light)]">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="password" className="text-right">
                 Password
               </Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Enter your password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="border-[var(--color-border-dark)] focus:border-[var(--color-primary)] focus:ring-[var(--color-primary)]"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="col-span-3"
                 required
+                disabled={isLoading}
               />
             </div>
-            
-            <Button 
-              type="submit" 
-              disabled={isLoading}
-              className="w-1/3 flex justify-center items-center mx-auto bg-[var(--color-sidebar-hover)] hover:bg-[var(--color-sidebar-hover-dark)] text-[var(--color-text-light)] font-semibold py-2 disabled:opacity-50 hover:scale-110 cursor-pointer active:scale-95 transition-all duration-300"
-            >
-              {isLoading ? 'Signing In...' : 'Sign In'}
-            </Button>
-          </form>
-          
-          <Separator className="my-6" />
-          
-          <div className="text-center">
-            <p className="text-sm text-[var(--color-text-muted)]">
-              Don't have an account?{' '}
-              <button
-                onClick={handleSwitchToRegister}
-                className="text-[var(--color-primary)] hover:underline font-medium"
-              >
-                Sign up
-              </button>
-            </p>
           </div>
-        </div>
+          {error && (
+            <div className="text-red-500 text-sm text-center mb-4">
+              {error}
+            </div>
+          )}
+          <DialogFooter>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Logging in..." : "Login"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

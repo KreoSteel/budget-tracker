@@ -1,105 +1,117 @@
-const API_BASE_URL = 'http://localhost:3000'; // Adjust this to match your backend port
-
-export interface User {
-  _id: string;
-  name: string;
-  email: string;
-  password: string;
-  preferences: {
-    currency: string;
-    dateFormat: string;
-    budgetPeriod: string;
-    theme: string;
-  };
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+import { http } from "~/lib/http";
+import type { User } from "~/types/User";
 
 export interface LoginCredentials {
   email: string;
   password: string;
 }
 
-export interface RegisterData {
-  name: string;
-  email: string;
-  password: string;
+export interface LoginResponse {
+  user: User;
+  token: string;
 }
 
-export const authService = {
-  async login(credentials: LoginCredentials): Promise<User> {
-    try {
-      // For now, we'll get all users and find a match
-      // In a real app, you'd have a proper login endpoint
-      const response = await fetch(`${API_BASE_URL}/users`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch users');
-      }
-      
-      const users: User[] = await response.json();
-      const user = users.find(u => 
-        u.email.toLowerCase() === credentials.email.toLowerCase() && 
-        u.password === credentials.password
-      );
-      
-      if (!user) {
-        throw new Error('Invalid email or password');
-      }
-      
-      // Store user in localStorage for persistence
-      localStorage.setItem('user', JSON.stringify(user));
-      return user;
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
+class AuthService {
+  private token: string | null = null;
+  private user: User | null = null;
+
+  // Lazy getters that only access localStorage when needed
+  private getStoredToken(): string | null {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return localStorage.getItem('authToken');
     }
-  },
-
-  async register(userData: RegisterData): Promise<User> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/users`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Registration failed');
-      }
-      
-      const newUser: User = await response.json();
-      
-      // Store user in localStorage for persistence
-      localStorage.setItem('user', JSON.stringify(newUser));
-      return newUser;
-    } catch (error) {
-      console.error('Registration error:', error);
-      throw error;
-    }
-  },
-
-  async logout(): Promise<void> {
-    localStorage.removeItem('user');
-  },
-
-  async getCurrentUser(): Promise<User | null> {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) return null;
-    
-    try {
-      return JSON.parse(userStr);
-    } catch {
-      localStorage.removeItem('user');
-      return null;
-    }
-  },
-
-  async checkAuth(): Promise<boolean> {
-    const user = await this.getCurrentUser();
-    return !!user;
+    return null;
   }
-};
+
+  private setStoredToken(token: string | null): void {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      if (token) {
+        localStorage.setItem('authToken', token);
+      } else {
+        localStorage.removeItem('authToken');
+      }
+    }
+  }
+
+  private getStoredUser(): User | null {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const userData = localStorage.getItem('authUser');
+      return userData ? JSON.parse(userData) : null;
+    }
+    return null;
+  }
+
+  private setStoredUser(user: User | null): void {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      if (user) {
+        localStorage.setItem('authUser', JSON.stringify(user));
+      } else {
+        localStorage.removeItem('authUser');
+      }
+    }
+  }
+
+  async login(credentials: LoginCredentials): Promise<{ success: boolean; user?: User; error?: string }> {
+    try {
+      const response = await http.post<LoginResponse>('/auth/login', credentials);
+      
+      if (response.data) {
+        this.token = response.data.token;
+        this.user = response.data.user;
+        this.setStoredToken(this.token);
+        this.setStoredUser(this.user);
+        return { success: true, user: this.user };
+      }
+      
+      return { success: false, error: 'Login failed' };
+    } catch (error: any) {
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Login failed' 
+      };
+    }
+  }
+
+  logout(): void {
+    this.token = null;
+    this.user = null;
+    this.setStoredToken(null);
+    this.setStoredUser(null);
+  }
+
+  isAuthenticated(): boolean {
+    if (!this.token) {
+      this.token = this.getStoredToken();
+    }
+    // If we have a token but no user, try to get user from localStorage
+    if (this.token && !this.user) {
+      this.user = this.getStoredUser();
+    }
+    return !!this.token;
+  }
+
+  getCurrentUser(): User | null {
+    if (!this.user && this.isAuthenticated()) {
+      // Try to get user from localStorage if we don't have it in memory
+      const storedUser = this.getStoredUser();
+      if (storedUser) {
+        this.user = storedUser;
+        return this.user;
+      }
+    }
+    return this.user;
+  }
+
+  getToken(): string | null {
+    if (!this.token) {
+      this.token = this.getStoredToken();
+    }
+    // If we have a token but no user, try to get user from localStorage
+    if (this.token && !this.user) {
+      this.user = this.getStoredUser();
+    }
+    return this.token;
+  }
+}
+
+export const authService = new AuthService();

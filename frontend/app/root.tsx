@@ -9,7 +9,6 @@ import {
 
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { SidebarProvider } from "~/components/ui/sidebar";
-import { AuthProvider } from "~/contexts/AuthContext";
 import type { Route } from "./+types/root";
 import "./app.css";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -64,11 +63,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <AuthProvider>
-          <SidebarProvider>
-            {children}
-          </SidebarProvider>
-        </AuthProvider>
+        {children}
         <ScrollRestoration />
         <Scripts />
       </body>
@@ -79,7 +74,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <SidebarProvider>
+        <Outlet />
+      </SidebarProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );

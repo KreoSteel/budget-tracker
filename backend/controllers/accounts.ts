@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
-import { createAccount, getAllAccounts, getAccountById, getAccountsByUserId, getAccountsByType, deleteAccount, deactivateAccount, activateAccount, transferBetweenAccounts, getTotalNetWorth, getAccountBalanceHistory, getAccountByUserId } from "../services/account";
+import { createAccount, getAllAccounts, getAccountById, getAccountsByUserId, getAccountsByType, deleteAccount, deactivateAccount, activateAccount, transferBetweenAccounts, getTotalNetWorth, getAccountBalanceHistory, getAccountByUserId, updateAccount } from "../services/account";
+import { createPaginatedResponse, applyPagination } from "../middleware/pagination";
 import mongoose from "mongoose";
 
 export const accountsControllers = {
@@ -132,11 +133,11 @@ export const accountsControllers = {
                 });
             }
 
-            if (!['checking', 'savings', 'credit', 'investment', 'cash'].includes(type)) {
+            if (!['checking', 'savings', 'credit_card', 'investment', 'cash'].includes(type)) {
                 return res.status(400).json({ 
                     error: "Invalid account type",
                     message: "Account type must be one of: checking, savings, credit, investment, cash",
-                    validTypes: ['checking', 'savings', 'credit', 'investment', 'cash']
+                    validTypes: ['checking', 'savings', 'credit_card', 'investment', 'cash']
                 });
             }
 
@@ -207,6 +208,109 @@ export const accountsControllers = {
             res.status(500).json({ 
                 error: "Internal server error",
                 message: "Failed to create account"
+            });
+        }
+    },
+
+    updateAccount: async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+            const { name, balance, type, bankName, userId, currency, isActive } = req.body;
+
+            // Validate id parameter
+            if (!id) {
+                return res.status(400).json({ 
+                    error: "Account ID parameter is required",
+                    message: "Please provide account ID in the URL"
+                });
+            }
+
+            // Validate ObjectId format
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+                return res.status(400).json({ 
+                    error: "Invalid account ID format",
+                    message: "Account ID must be a valid MongoDB ObjectId"
+                });
+            }
+
+            // Check if account exists before updating
+            const existingAccount = await getAccountById(id);
+            if (!existingAccount) {
+                return res.status(404).json({ 
+                    error: "Account not found",
+                    message: "Account with the specified ID does not exist"
+                });
+            }
+
+            // Validate required fields
+            if (!name || !type || !userId) {
+                return res.status(400).json({ 
+                    error: "Missing required fields",
+                    message: "Name, type, and userId are required fields"
+                });
+            }
+
+            // Validate account type
+            const validTypes = ['cash', 'checking', 'savings', 'credit_card', 'investment', 'other'];
+            if (!validTypes.includes(type)) {
+                return res.status(400).json({ 
+                    error: "Invalid account type",
+                    message: `Account type must be one of: ${validTypes.join(', ')}`
+                });
+            }
+
+            // Validate balance is a number
+            if (typeof balance !== 'number' || isNaN(balance)) {
+                return res.status(400).json({ 
+                    error: "Invalid balance",
+                    message: "Balance must be a valid number"
+                });
+            }
+
+            // Validate userId format
+            if (!mongoose.Types.ObjectId.isValid(userId)) {
+                return res.status(400).json({ 
+                    error: "Invalid userId format",
+                    message: "userId must be a valid MongoDB ObjectId"
+                });
+            }
+
+            const updatedAccount = await updateAccount(id, { 
+                name, 
+                balance, 
+                type, 
+                bankName, 
+                userId, 
+                currency, 
+                isActive 
+            } as Partial<{ 
+                name: string; 
+                balance: number; 
+                type: string; 
+                bankName?: string; 
+                userId: mongoose.Types.ObjectId; 
+                currency: string; 
+                isActive: boolean; 
+            }>);
+
+            if (!updatedAccount) {
+                return res.status(500).json({ 
+                    error: "Update failed",
+                    message: "Failed to update account in database"
+                });
+            }
+
+            res.json({
+                success: true,
+                message: "Account updated successfully",
+                data: updatedAccount
+            });
+        }
+        catch (error) {
+            console.error("Error updating account:", error);
+            res.status(500).json({ 
+                error: "Internal server error",
+                message: "Failed to update account"
             });
         }
     },
@@ -462,7 +566,20 @@ export const accountsControllers = {
                 });
             }
 
-            const accounts = await getAccountsByUserId(new mongoose.Types.ObjectId(userId));
+            // Check if pagination middleware is attached
+            if (!req.pagination) {
+                return res.status(500).json({ 
+                    error: "Pagination middleware not configured",
+                    message: "Pagination is required for this endpoint"
+                });
+            }
+
+            // Get paginated accounts
+            const { data: accounts, totalCount } = await applyPagination(
+                { userId: new mongoose.Types.ObjectId(userId) },
+                req.pagination,
+                require("../models/account").default
+            );
             
             if (!accounts || accounts.length === 0) {
                 return res.status(404).json({ 
@@ -471,11 +588,10 @@ export const accountsControllers = {
                 });
             }
 
-            res.json({
-                success: true,
-                count: accounts.length,
-                data: accounts
-            });
+            // Create paginated response
+            const paginatedResponse = createPaginatedResponse(accounts, req.pagination, totalCount);
+
+            res.json(paginatedResponse);
         } catch (error) {
             console.error("Error fetching accounts by user ID:", error);
             res.status(500).json({ 

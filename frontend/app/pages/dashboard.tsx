@@ -1,111 +1,97 @@
-import { DollarSign, TrendingDown, TrendingUp, CircleStar } from "lucide-react";
+import { DollarSign, TrendingDown, TrendingUp, CircleStar, Users } from "lucide-react";
 import { FaChartLine, FaWallet } from "react-icons/fa6";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { Progress } from "~/components/ui/progress";
 import { useState } from "react";
-import { useAuth } from "~/contexts/AuthContext";
-import { useAccounts, useGetNetWorth } from "~/hooks/useAccounts";
+import { useAccountByUserId, useAccounts, useGetNetWorth } from "~/hooks/useAccounts";
 import { LoginDialog } from "~/components/auth/LoginDialog";
-import { RegisterDialog } from "~/components/auth/RegisterDialog";
 import { useTransactions, useFinancialMetrics } from "~/hooks/useTransactions";
 import { useGoals } from "~/hooks/useGoals";
 import { calculateGoalProgress, getProgressVariant, formatCurrency as formatGoalCurrency } from "~/lib/goalUtils";
 import Sidebar from "~/components/layouts/Sidebar";
 import { useNavigate } from "react-router";
 import { formatCurrency } from "~/lib/utils";
+import { useCurrentUser } from "~/hooks/useCurrentUser";
+import { authService } from "~/services/authService";
+import type { User } from "~/types/User";
 
 
-export default function Dashboard() {
-  const { user, isAuthenticated, login, logout, register, error, isLoading } = useAuth();
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [selectedItem, setSelectedItem] = useState('dashboard');
-  const navigate = useNavigate();
 
-  const handleItemSelect = (item: string) => {
-    setSelectedItem(item);
-    
-    // Navigate to the appropriate route
-    if (item === 'dashboard') {
-      navigate('/');
-    } else {
-      navigate(`/${item}`);
-    }
-  };
-
-
-  // Safe currency formatting function
-
-
-  const handleLogin = async (email: string, password: string) => {
-    const success = await login({ email, password });
-    if (success) {
-      setIsLoginOpen(false);
-      setFormError(null);
-    } else {
-      setFormError(error || 'Login failed');
-    }
-    return success;
-  };
-
-  const handleRegister = async (name: string, email: string, password: string) => {
-    const success = await register({ name, email, password });
-    if (success) {
-      setIsRegisterOpen(false);
-      setFormError(null);
-    } else {
-      setFormError(error || 'Registration failed');
-    }
-    return success;
-  };
-
-  const handleLogout = async () => {
-    await logout();
-  };
-
-
-  const { data: goals } = useGoals(user?._id, { limit: 3 });
-  const { data: accounts } = useAccounts();
-  const { data: netWorth } = useGetNetWorth(user?._id);
-  const { data: financialMetrics } = useFinancialMetrics(user?._id);
-  const { data: recentTransactions } = useTransactions(user?._id, accounts?.[0]?._id, {
+function AuthenticatedDashboard({ selectedItem, onItemSelect, onLogout }: {
+  selectedItem: string;
+  onItemSelect: (item: string) => void;
+  onLogout: () => void;
+}) {
+  const { data: currentUser, isPending: currentUserLoading } = useCurrentUser();
+  const { data: goals, isPending: goalsLoading } = useGoals(currentUser?._id || '', { limit: 3 });
+  const { data: accounts, isPending: accountsLoading } = useAccounts();
+  const { data: netWorth, isPending: netWorthLoading } = useGetNetWorth();
+  const { data: financialMetrics, isPending: metricsLoading } = useFinancialMetrics(currentUser?._id || '');
+  const { data: recentTransactions, isPending: transactionsLoading } = useTransactions(currentUser?._id || '', accounts?.[0]?._id, {
     recent: true,
     limit: 6
   });
-  
-  console.log('Goals data:', goals);
-  console.log('Goals type:', typeof goals);
-  console.log('Is goals array?', Array.isArray(goals));
-  console.log('Goals length:', goals?.length);
+
+  if (currentUserLoading || goalsLoading || accountsLoading || netWorthLoading || metricsLoading || transactionsLoading) {
+    return (
+      <div className="flex h-screen w-[60vw]">
+        <Sidebar
+          selectedItem={selectedItem}
+          onItemSelect={onItemSelect}
+        />
+        <div className="flex-1 p-10 flex items-center justify-center font-source-sans bg-[var(--color-background-dark-secondary)]">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-800 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            </div>
+            <h1 className="text-2xl font-semibold text-white mb-4">Loading Dashboard...</h1>
+            <p className="text-gray-400">Please wait while we fetch your financial data.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen w-[60vw]">
       <Sidebar
         selectedItem={selectedItem}
-        onItemSelect={handleItemSelect}
+        onItemSelect={onItemSelect}
       />
 
       {/* Dashboard Content */}
       <div className="flex-1 p-10 flex flex-col gap-10 font-source-sans bg-[var(--color-background-dark-secondary)]">
         <span className="flex flex-col gap-3">
-          <h1 className="text-4xl font-semibold">Welcome to Dashboard</h1>
-          <p className="text-lg text-gray-500">Here you can manage your finances and get a better understanding of your spending and saving habits.</p>
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-2">
+              <h1 className="text-4xl font-semibold">Welcome to Dashboard</h1>
+              <p className="text-lg leading-relaxed text-gray-400 max-w-3xl">
+                Get a quick overview of your accounts, goals, and recent transactions. Track your financial progress and stay on top of your money.
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <span className="text-white">Welcome, {currentUser?.name || 'User'}</span>
+                <Button onClick={onLogout} variant="outline">
+                  Logout
+                </Button>
+              </div>
+            </div>
+          </div>
         </span>
 
         <div className="grid grid-cols-4 gap-6 w-full">
           {/* Total Balance Card */}
-          <Card className="w-full rounded-2xl text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-blue-500 to-blue-600">
+          <Card className="w-full rounded-2xl text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800">
             <CardContent className="flex flex-col gap-6">
               <span className="flex items-center justify-between text-xl">
                 <DollarSign size={30} />
                 <span className="flex gap-2 items-center text-green-300/90">
-                  <span className={`flex items-center gap-1 text-[18px] ${
-                    (typeof financialMetrics?.data?.totalBalance?.change === 'number' && financialMetrics.data.totalBalance.change >= 0)
+                  <span className={`flex items-center gap-1 text-[18px] ${(typeof financialMetrics?.data?.totalBalance?.change === 'number' && financialMetrics.data.totalBalance.change >= 0)
                       ? 'text-emerald-400'
                       : 'text-red-400'
-                  }`}>
+                    }`}>
                     {(typeof financialMetrics?.data?.totalBalance?.change === 'number'
                       ? (financialMetrics.data.totalBalance.change >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />)
                       : '--')}
@@ -119,24 +105,23 @@ export default function Dashboard() {
                 <p>Total Balance</p>
               </span>
               <p className="text-3xl font-bold">
-                {financialMetrics?.data?.totalBalance?.current 
-                  ? formatCurrency(financialMetrics.data.totalBalance.current)
-                  : formatCurrency(netWorth)
+                {financialMetrics?.data?.totalBalance?.current
+                  ? formatCurrency(financialMetrics.data.totalBalance.current, currentUser?.preferences?.currency || 'USD')
+                  : formatCurrency(netWorth || 0, currentUser?.preferences?.currency || 'USD')
                 }
               </p>
             </CardContent>
           </Card>
 
           {/* Monthly Income Card */}
-          <Card className="w-full rounded-2xl text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-green-500 to-green-600">
+          <Card className="w-full rounded-2xl text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-green-600 via-green-700 to-green-800">
             <CardContent className="flex flex-col gap-6">
               <span className="flex items-center justify-between text-xl">
                 <FaChartLine className="text-2xl" />
                 <span className="flex gap-2 items-center text-green-300/90">
-                  <span className={`flex items-center gap-1 text-[18px] ${
-                    (typeof financialMetrics?.data?.monthlyIncome?.change === 'number' && financialMetrics.data.monthlyIncome.change >= 0)
+                  <span className={`flex items-center gap-1 text-[18px] ${(typeof financialMetrics?.data?.monthlyIncome?.change === 'number' && financialMetrics.data.monthlyIncome.change >= 0)
                       ? 'text-emerald-400'
-                        : 'text-rose-400'
+                      : 'text-rose-400'
                     }`}>
                     {(typeof financialMetrics?.data?.monthlyIncome?.change === 'number'
                       ? (financialMetrics.data.monthlyIncome.change >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />)
@@ -151,8 +136,8 @@ export default function Dashboard() {
                 <p>Monthly Income</p>
               </span>
               <p className="text-3xl font-bold">
-                {financialMetrics?.data?.monthlyIncome?.current 
-                  ? formatCurrency(financialMetrics.data.monthlyIncome.current)
+                {financialMetrics?.data?.monthlyIncome?.current
+                  ? formatCurrency(financialMetrics.data.monthlyIncome.current, currentUser?.preferences?.currency || 'USD')
                   : '0.00'
                 }
               </p>
@@ -160,16 +145,15 @@ export default function Dashboard() {
           </Card>
 
           {/* Monthly Expenses Card */}
-          <Card className="w-full rounded-2xl text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-red-500 to-red-600">
+          <Card className="w-full rounded-2xl text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-red-600 via-red-700 to-red-800">
             <CardContent className="flex flex-col gap-6">
               <span className="flex items-center justify-between text-xl">
                 <FaChartLine className="text-2xl rotate-180" />
                 <span className="flex gap-2 items-center text-green-300/90">
-                  <span className={`flex items-center gap-1 text-[18px] ${
-                    (typeof financialMetrics?.data?.monthlyExpenses?.change === 'number' && financialMetrics.data.monthlyExpenses.change <= 0)
+                  <span className={`flex items-center gap-1 text-[18px] ${(typeof financialMetrics?.data?.monthlyExpenses?.change === 'number' && financialMetrics.data.monthlyExpenses.change <= 0)
                       ? 'text-emerald-400'
                       : 'text-rose-400'
-                  }`}>
+                    }`}>
                     {(typeof financialMetrics?.data?.monthlyExpenses?.change === 'number'
                       ? (financialMetrics.data.monthlyExpenses.change <= 0 ? <TrendingDown size={16} /> : <TrendingUp size={16} />)
                       : '--')}
@@ -183,8 +167,8 @@ export default function Dashboard() {
                 <p>Monthly Expenses</p>
               </span>
               <p className="text-3xl font-bold">
-                {financialMetrics?.data?.monthlyExpenses?.current 
-                  ? formatCurrency(financialMetrics.data.monthlyExpenses.current)
+                {financialMetrics?.data?.monthlyExpenses?.current
+                  ? formatCurrency(financialMetrics.data.monthlyExpenses.current, currentUser?.preferences?.currency || 'USD')
                   : '0.00'
                 }
               </p>
@@ -192,16 +176,15 @@ export default function Dashboard() {
           </Card>
 
           {/* Savings Card */}
-          <Card className="w-full rounded-2xl text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-purple-500 to-purple-600">
+          <Card className="w-full rounded-2xl text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-purple-600 via-purple-700 to-purple-800">
             <CardContent className="flex flex-col gap-6">
               <span className="flex items-center justify-between text-xl">
                 <FaWallet className="text-2xl" />
                 <span className="flex gap-2 items-center text-green-300/90">
-                  <span className={`flex items-center gap-1 text-[18px] ${
-                    (typeof financialMetrics?.data?.savings?.change === 'number' && financialMetrics.data.savings.change >= 0)
+                  <span className={`flex items-center gap-1 text-[18px] ${(typeof financialMetrics?.data?.savings?.change === 'number' && financialMetrics.data.savings.change >= 0)
                       ? 'text-emerald-400'
                       : 'text-rose-400'
-                  }`}>
+                    }`}>
                     {(typeof financialMetrics?.data?.savings?.change === 'number'
                       ? (financialMetrics.data.savings.change >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />)
                       : '--')}
@@ -214,7 +197,7 @@ export default function Dashboard() {
               <span className="flex text-xl font-semibold">
                 <p>Savings</p>
               </span>
-              <p className="text-3xl font-bold">{financialMetrics?.data?.savings?.current ? formatCurrency(financialMetrics.data.savings.current) : '0.00'}</p>
+              <p className="text-3xl font-bold">{financialMetrics?.data?.savings?.current ? formatCurrency(financialMetrics.data.savings.current, currentUser?.preferences?.currency || 'USD') : '0.00'}</p>
             </CardContent>
           </Card>
         </div>
@@ -241,8 +224,8 @@ export default function Dashboard() {
                   <span className={`font-semibold ${transaction.type === 'income'
                     ? 'text-green-400'
                     : 'text-red-400'
-                  } text-lg`}>
-                    {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
+                    } text-lg`}>
+                    {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount, currentUser?.preferences?.currency || 'USD')}
                   </span>
                 </div>
               ))}
@@ -254,7 +237,7 @@ export default function Dashboard() {
               <Button variant="default" className="text-blue-500 hover:text-blue-500/70 cursor-pointer">Manage Goals</Button>
             </div>
             <div className="flex flex-col gap-5 w-full">
-              {goals && goals.length > 0 ? (
+              {goals && Array.isArray(goals) && goals.length > 0 ? (
                 goals.map((goal) => {
                   const progress = calculateGoalProgress(goal);
                   return (
@@ -273,23 +256,23 @@ export default function Dashboard() {
                           {progress.progressPercentage}%
                         </span>
                       </div>
-                      
-                      <Progress 
-                        value={progress.progressPercentage} 
-                        className="w-full" 
+
+                      <Progress
+                        value={progress.progressPercentage}
+                        className="w-full"
                         variant={getProgressVariant(progress.progressPercentage)}
                         size="md"
                       />
-                      
+
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-gray-300">
-                          {formatGoalCurrency(goal.currentAmount)} saved
+                          {formatGoalCurrency(goal.currentAmount, currentUser?.preferences?.currency || 'USD')} saved
                         </span>
-                        <span className="text-gray-300">
-                          of {formatGoalCurrency(goal.targetAmount)}
+                        <span className="text-lg font-bold text-purple-400">
+                          {progress.progressPercentage}%
                         </span>
                       </div>
-                      
+
                       {goal.targetDate && (
                         <div className="text-xs text-gray-500 text-center">
                           Target: {new Date(goal.targetDate).toLocaleDateString()}
@@ -308,33 +291,86 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-
-      {/* Auth Dialogs */}
-      <LoginDialog
-        open={isLoginOpen}
-        onOpenChange={setIsLoginOpen}
-        onLogin={handleLogin}
-        onSwitchToRegister={() => {
-          setIsLoginOpen(false);
-          setIsRegisterOpen(true);
-          setFormError(null);
-        }}
-        isLoading={isLoading}
-        error={formError}
-      />
-
-      <RegisterDialog
-        open={isRegisterOpen}
-        onOpenChange={setIsRegisterOpen}
-        onRegister={handleRegister}
-        onSwitchToLogin={() => {
-          setIsRegisterOpen(false);
-          setIsLoginOpen(true);
-          setFormError(null);
-        }}
-        isLoading={isLoading}
-        error={formError}
-      />
     </div>
   );
+}
+
+export default function Dashboard() {
+  const [selectedItem, setSelectedItem] = useState('dashboard');
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(authService.getCurrentUser());
+  const navigate = useNavigate();
+
+  const handleItemSelect = (item: string) => {
+    setSelectedItem(item);
+
+    if (item === 'dashboard') {
+      navigate('/');
+    } else {
+      navigate(`/${item}`);
+    }
+  };
+
+  const handleLoginSuccess = (user: User) => {
+    setCurrentUser(user);
+  };
+
+  const handleLogout = () => {
+    authService.logout();
+    setCurrentUser(null);
+  };
+
+  const handleLoginClick = () => {
+    console.log('=== BUTTON CLICKED ===');
+    setIsLoginOpen(true);
+  };
+
+  if (!currentUser || !authService.isAuthenticated()) {
+    return (
+      <>
+        <div className="flex h-screen w-[60vw]">
+          <Sidebar
+            selectedItem={selectedItem}
+            onItemSelect={handleItemSelect}
+          />
+          <div className="flex-1 p-10 flex items-center justify-center font-source-sans bg-[var(--color-background-dark-secondary)]">
+            <div className="text-center">
+              <h1 className="text-2xl font-semibold text-white mb-4">Welcome to FinanceTracker</h1>
+              <p className="text-gray-400 mb-6">Please log in to access your dashboard and financial data.</p>
+              <Button onClick={handleLoginClick} size="lg">
+                Login
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <LoginDialog
+          open={isLoginOpen}
+          onOpenChange={setIsLoginOpen}
+          onLoginSuccess={handleLoginSuccess}
+        />
+      </>
+    );
+  }
+
+  if (currentUser && authService.isAuthenticated()) {
+    return (
+      <>
+        <AuthenticatedDashboard
+          selectedItem={selectedItem}
+          onItemSelect={handleItemSelect}
+          onLogout={handleLogout}
+        />
+
+        {/* Login Dialog - must be rendered even when authenticated */}
+        <LoginDialog
+          open={isLoginOpen}
+          onOpenChange={setIsLoginOpen}
+          onLoginSuccess={handleLoginSuccess}
+        />
+      </>
+    );
+  }
+
+  return null;
 }

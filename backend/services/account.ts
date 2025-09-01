@@ -39,7 +39,15 @@ export async function createAccount(name: string, balance: number, type: string,
   }
 }
 
-export async function updateAccount(id: string, updateData: Partial<typeof Account>) {
+export async function updateAccount(id: string, updateData: {
+    name?: string;
+    balance?: number;
+    type?: string;
+    bankName?: string;
+    userId?: mongoose.Types.ObjectId;
+    currency?: string;
+    isActive?: boolean;
+}) {
     const result = await Account.findById(id);
     if (!result) {
         throw new Error("Account not found");
