@@ -27,11 +27,12 @@ const transactionSchema = new mongoose.Schema({
     categoryId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Category',
-        required: true
+        required: false
     },
     date: {
         type: Date,
-        required: true
+        required: false,
+        default: Date.now
     },
 
     paymentMethod: {

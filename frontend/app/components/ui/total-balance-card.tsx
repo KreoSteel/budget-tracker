@@ -1,5 +1,6 @@
 import { TrendingUp, TrendingDown, Wallet } from "lucide-react";
 import { Card, CardContent } from "~/components/ui/card";
+import { formatCurrency } from "~/lib/utils";
 
 interface TotalBalanceCardProps {
     current: number;
@@ -15,7 +16,7 @@ export function TotalBalanceCard({
     lastUpdated = "Just now"
 }: TotalBalanceCardProps) {
     return (
-        <Card className="w-full rounded-xl text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-blue-900 via-blue-950 to-slate-900 border border-blue-800">
+        <Card className="w-full rounded-xl text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-blue-900 via-blue-950 to-slate-900 border border-blue-500/30">
             <CardContent className="px-6">
                 <div className="flex items-center justify-between">
                     <div className="flex flex-col gap-2">
@@ -29,7 +30,7 @@ export function TotalBalanceCard({
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <span className="text-2xl font-bold text-white">${current.toLocaleString()}</span>
+                            <span className="text-2xl font-bold text-white">{formatCurrency(current, currency)}</span>
                             <span className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
                                 change >= 0 
                                     ? 'bg-green-600/20 text-green-300 border border-green-600/30' 
@@ -40,7 +41,7 @@ export function TotalBalanceCard({
                                 ) : (
                                     <TrendingDown className="size-3" />
                                 )}
-                                {Math.abs(change)}%
+                                {Math.abs(change).toFixed(1)}%
                             </span>
                         </div>
                     </div>

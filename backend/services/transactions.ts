@@ -7,6 +7,27 @@ export async function getAllTransactions() {
     return transactions;
 }
 
+export async function getTransactionsByUserId(userId: string) {
+    // First, get all accounts for this user
+    const userAccounts = await Account.find({ userId: new mongoose.Types.ObjectId(userId) });
+    
+    if (!userAccounts || userAccounts.length === 0) {
+        return [];
+    }
+    
+    // Get account IDs
+    const accountIds = userAccounts.map(account => account._id);
+    
+    // Query transactions for these accounts
+    const transactions = await Transaction.find({ accountId: { $in: accountIds } })
+        .populate('accountId', 'name type balance')
+        .populate('categoryId', 'name type')
+        .sort({ date: -1 })
+        .lean();
+    
+    return transactions;
+}
+
 export async function getAllTransactionsWithPagination(
     query: any = {},
     page: number = 1,
@@ -41,7 +62,7 @@ export async function getAllTransactionsWithPagination(
 
 export async function getRecentTransactions(
     userId: string,
-    limit: number = 5,
+    limit: number = 6,
     days: number = 30
 ) {
     const startDate = new Date();
@@ -142,13 +163,13 @@ export async function getTransactionById(id: string) {
 
 export async function createTransaction(
     accountId: ObjectId,
-    categoryId: ObjectId,
     amount: number,
     type: string,
     description: string,
-    date: Date,
-    paymentMethod: string,
-    isRecurring: boolean,
+    categoryId?: ObjectId,
+    date?: Date,
+    paymentMethod?: string,
+    isRecurring?: boolean,
     recurringDetails?: any
 ) {
     const session = await mongoose.startSession();
@@ -187,14 +208,14 @@ export async function createTransaction(
         // CREATE TRANSACTION
         const transactionData = {
             accountId,
-            categoryId,
             amount,
             type,
             description,
-            date,
-            paymentMethod,
-            isRecurring,
-            recurringDetails
+            ...(categoryId && { categoryId }),
+            ...(date && { date }),
+            ...(paymentMethod && { paymentMethod }),
+            ...(isRecurring !== undefined && { isRecurring }),
+            ...(recurringDetails && { recurringDetails })
         };
 
         const [newTransaction] = await Transaction.create([transactionData], { session });
@@ -219,8 +240,44 @@ export async function createTransaction(
     }
 }
 export async function deleteTransaction(id: string) {
-    const result = await Transaction.findByIdAndDelete(id);
-    return result;
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        // 1. Get the transaction details before deleting
+        const transaction = await Transaction.findById(id).session(session);
+        if (!transaction) {
+            throw new Error("Transaction not found");
+        }
+
+        // 2. Get the account to update its balance
+        const account = await Account.findById(transaction.accountId).session(session);
+        if (!account) {
+            throw new Error("Account not found");
+        }
+
+        // 3. Reverse the account balance change
+        if (transaction.type === 'expense') {
+            account.balance += transaction.amount; // Add back the expense
+        } else if (transaction.type === 'income') {
+            account.balance -= transaction.amount; // Subtract the income
+        }
+
+        // 4. Save the updated account balance
+        await account.save({ session });
+
+        // 5. Delete the transaction
+        const result = await Transaction.findByIdAndDelete(id).session(session);
+
+        await session.commitTransaction();
+        return result;
+
+    } catch (error) {
+        await session.abortTransaction();
+        throw error;
+    } finally {
+        session.endSession();
+    }
 }
 
 export async function updateTransaction(id: string, updateData: Partial<typeof Transaction>) {

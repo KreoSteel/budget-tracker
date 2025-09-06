@@ -4,4 +4,5 @@ export default [
   route("/", "pages/dashboard.tsx"),
   route("/accounts", "pages/accounts.tsx"),
   route("/transactions", "pages/transactions.tsx"),
+  route("/goals", "pages/goals.tsx")
 ] satisfies RouteConfig;

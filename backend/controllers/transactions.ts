@@ -1,4 +1,4 @@
-import { getAllTransactions, getRecentTransactions, getTransactionById, createTransaction, deleteTransaction, updateTransaction, getTransactionsByDateRange, getTransactionsByCategory, getTransactionsByAccount, getFinancialMetrics } from "../services/transactions";
+import { getAllTransactions, getRecentTransactions, getTransactionById, createTransaction, deleteTransaction, updateTransaction, getTransactionsByDateRange, getTransactionsByCategory, getTransactionsByAccount, getFinancialMetrics, getTransactionsByUserId } from "../services/transactions";
 import { Request, Response } from "express";
 import Transaction from "../models/transaction";
 import mongoose from "mongoose";
@@ -15,7 +15,8 @@ export const transactionsControllers = {
                 categoryId, 
                 type, 
                 startDate, 
-                endDate
+                endDate,
+                search
             } = req.query;
             
             // Validate userId if provided
@@ -77,6 +78,15 @@ export const transactionsControllers = {
                 if (startDate) query.date.$gte = new Date(startDate as string);
                 if (endDate) query.date.$lte = new Date(endDate as string);
             }
+            
+            // Add search functionality
+            if (search && typeof search === 'string' && search.trim()) {
+                const searchRegex = new RegExp(search.trim(), 'i');
+                query.$or = [
+                    { description: searchRegex },
+                    { amount: isNaN(Number(search)) ? null : Number(search) }
+                ];
+            }
 
             // Sort is now handled by pagination middleware
 
@@ -109,6 +119,21 @@ export const transactionsControllers = {
             res.status(500).json({ 
                 error: "Internal server error",
                 message: "Failed to fetch transactions"
+            });
+        }
+    },
+
+    getTransactionsByUserId: async (req: Request, res: Response) => {
+        try {
+            const { userId } = req.params;
+            const transactions = await getTransactionsByUserId(userId);
+            res.json(transactions);
+        }
+        catch (error) {
+            console.error("Error fetching transactions by user ID:", error);
+            res.status(500).json({ 
+                error: "Internal server error",
+                message: "Failed to fetch transactions by user ID"
             });
         }
     },
@@ -156,13 +181,14 @@ export const transactionsControllers = {
 
     getRecentTransactions: async (req: Request, res: Response) => {
         try {
-            const { userId, limit = '5', days = '30' } = req.query;
+            const { userId } = req.params;
+            const { limit = '5', days = '30' } = req.query;
             
             // Validate userId parameter
             if (!userId) {
                 return res.status(400).json({ 
                     error: "UserId parameter is required",
-                    message: "Please provide userId in query parameters"
+                    message: "Please provide userId in path parameters"
                 });
             }
             
@@ -228,11 +254,11 @@ export const transactionsControllers = {
             const { accountId, categoryId, type, amount, description, date, paymentMethod, isRecurring, recurringDetails } = req.body;
 
             // Validate required fields
-            if (!accountId || !categoryId || !type || !amount || !description) {
+            if (!accountId || !type || !amount || !description) {
                 return res.status(400).json({ 
                     error: "Missing required fields",
-                    required: ["accountId", "categoryId", "type", "amount", "description"],
-                    received: { accountId, categoryId, type, amount, description }
+                    required: ["accountId", "type", "amount", "description"],
+                    received: { accountId, type, amount, description }
                 });
             }
 
@@ -245,7 +271,8 @@ export const transactionsControllers = {
             }
 
             // Validate amount precision (max 2 decimal places)
-            if (amount % 0.01 !== 0) {
+            const decimalPlaces = (amount.toString().split('.')[1] || '').length;
+            if (decimalPlaces > 2) {
                 return res.status(400).json({ 
                     error: "Invalid amount precision",
                     message: "Amount can have maximum 2 decimal places"
@@ -262,10 +289,17 @@ export const transactionsControllers = {
             }
 
             // Validate ObjectIds
-            if (!ObjectId.isValid(accountId) || !ObjectId.isValid(categoryId)) {
+            if (!ObjectId.isValid(accountId)) {
                 return res.status(400).json({ 
                     error: "Invalid ID format",
-                    message: "accountId and categoryId must be valid MongoDB ObjectIds"
+                    message: "accountId must be a valid MongoDB ObjectId"
+                });
+            }
+
+            if (categoryId && !ObjectId.isValid(categoryId)) {
+                return res.status(400).json({ 
+                    error: "Invalid ID format",
+                    message: "categoryId must be a valid MongoDB ObjectId"
                 });
             }
 
@@ -324,13 +358,13 @@ export const transactionsControllers = {
             // CALL SERVICE LAYER
             const newTransaction = await createTransaction(
                 accountId,
-                categoryId,
                 amount,
                 type,
                 description,
+                categoryId,
                 transactionDate,
-                paymentMethod || 'cash',
-                isRecurring || false,
+                paymentMethod,
+                isRecurring,
                 recurringDetails
             );
 

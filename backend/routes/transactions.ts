@@ -14,7 +14,8 @@ const transactionPagination = paginationMiddleware({
 });
 
 router.get("/", transactionPagination, transactionsControllers.getAllTransactions);
-router.get("/recent", transactionsControllers.getRecentTransactions);
+router.get("/recent/:userId", transactionsControllers.getRecentTransactions);
+router.get("/user/:userId", transactionsControllers.getTransactionsByUserId);
 router.get("/:id", transactionsControllers.getTransactionById);
 router.get("/date-range/:startDate/:endDate/:userId", transactionsControllers.getTransactionsByDateRange);
 router.get("/category/:categoryId/:period/:userId", transactionsControllers.getTransactionsByCategory);

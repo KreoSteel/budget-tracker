@@ -6,14 +6,15 @@ import { Progress } from "~/components/ui/progress";
 import { useState } from "react";
 import { useAccountByUserId, useAccounts, useGetNetWorth } from "~/hooks/useAccounts";
 import { LoginDialog } from "~/components/auth/LoginDialog";
-import { useTransactions, useFinancialMetrics } from "~/hooks/useTransactions";
+import { useFinancialMetrics, useRecentTransactions } from "~/hooks/useTransactions";
 import { useGoals } from "~/hooks/useGoals";
 import { calculateGoalProgress, getProgressVariant, formatCurrency as formatGoalCurrency } from "~/lib/goalUtils";
 import Sidebar from "~/components/layouts/Sidebar";
 import { useNavigate } from "react-router";
-import { formatCurrency } from "~/lib/utils";
+import { formatCurrency } from "~/lib/utils.js";
 import { useCurrentUser } from "~/hooks/useCurrentUser";
 import { authService } from "~/services/authService";
+import { Navigate } from "react-router";
 import type { User } from "~/types/User";
 
 
@@ -28,11 +29,8 @@ function AuthenticatedDashboard({ selectedItem, onItemSelect, onLogout }: {
   const { data: accounts, isPending: accountsLoading } = useAccounts();
   const { data: netWorth, isPending: netWorthLoading } = useGetNetWorth();
   const { data: financialMetrics, isPending: metricsLoading } = useFinancialMetrics(currentUser?._id || '');
-  const { data: recentTransactions, isPending: transactionsLoading } = useTransactions(currentUser?._id || '', accounts?.[0]?._id, {
-    recent: true,
-    limit: 6
-  });
-
+  const { data: recentTransactions, isPending: transactionsLoading } = useRecentTransactions(currentUser?._id || '', 6);
+  const navigate = useNavigate();
   if (currentUserLoading || goalsLoading || accountsLoading || netWorthLoading || metricsLoading || transactionsLoading) {
     return (
       <div className="flex h-screen w-[60vw]">
@@ -73,7 +71,7 @@ function AuthenticatedDashboard({ selectedItem, onItemSelect, onLogout }: {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-3">
                 <span className="text-white">Welcome, {currentUser?.name || 'User'}</span>
-                <Button onClick={onLogout} variant="outline">
+                <Button onClick={onLogout} variant="gradient">
                   Logout
                 </Button>
               </div>
@@ -205,36 +203,42 @@ function AuthenticatedDashboard({ selectedItem, onItemSelect, onLogout }: {
           <div className="flex flex-col gap-6 w-1/2 bg-gray-900 rounded-xl border border-gray-800 p-6 hover:border-gray-700 transition-all duration-200">
             <div className="flex items-center justify-between w-full">
               <h1 className="text-2xl font-semibold text-white">Recent Transactions</h1>
-              <Button variant="default" className="text-blue-500 hover:text-blue-500/70 cursor-pointer">View All</Button>
+              <Button variant="default" className="text-blue-500 hover:text-blue-500/70 cursor-pointer" onClick={() => navigate('/transactions')}>View All</Button>
             </div>
             <div className="flex flex-col gap-2 w-full">
-              {recentTransactions?.map((transaction) => (
-                <div key={transaction._id} className="flex items-center justify-between w-full rounded-xl py-4 px-4 bg-gray-800/50 border border-gray-700/50 hover:border-gray-600/50 transition-all duration-200">
-                  <div className="flex items-center gap-4">
-                    {transaction.type === 'income' ? <TrendingUp size={35} className="text-green-600 bg-green-300 p-2 rounded-full" /> : <TrendingDown size={35} className="text-red-600 bg-red-300 p-2 rounded-full" />}
-                    <span>
-                      <p className="text-lg font-semibold text-white">{transaction.description}</p>
-                      <p className="text-sm text-gray-400">{new Date(transaction.createdAt).toLocaleDateString('en-GB', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric'
-                      })}</p>
+              {Array.isArray(recentTransactions) && recentTransactions.length > 0 ? (
+                recentTransactions.map((transaction) => (
+                  <div key={transaction._id} className="flex items-center justify-between w-full rounded-xl py-4 px-4 bg-gray-800/50 border border-gray-700/50 hover:border-gray-600/50 transition-all duration-200">
+                    <div className="flex items-center gap-4">
+                      {transaction.type === 'income' ? <TrendingUp size={35} className="text-green-600 bg-green-300 p-2 rounded-full" /> : <TrendingDown size={35} className="text-red-600 bg-red-300 p-2 rounded-full" />}
+                      <span>
+                        <p className="text-lg font-semibold text-white">{transaction.description}</p>
+                        <p className="text-sm text-gray-400">{new Date(transaction.createdAt).toLocaleDateString('en-GB', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric'
+                        })}</p>
+                      </span>
+                    </div>
+                    <span className={`font-semibold ${transaction.type === 'income'
+                      ? 'text-green-400'
+                      : 'text-red-400'
+                      } text-lg`}>
+                      {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount, currentUser?.preferences?.currency || 'USD')}
                     </span>
                   </div>
-                  <span className={`font-semibold ${transaction.type === 'income'
-                    ? 'text-green-400'
-                    : 'text-red-400'
-                    } text-lg`}>
-                    {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount, currentUser?.preferences?.currency || 'USD')}
-                  </span>
+                ))
+              ) : (
+                <div className="flex items-center justify-center py-8">
+                  <p className="text-gray-400">No recent transactions found</p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
           <div className="flex flex-col gap-6 w-1/2 bg-gray-900 rounded-xl border border-gray-800 p-6 hover:border-gray-700 transition-all duration-200">
             <div className="flex items-center justify-between w-full">
               <h1 className="text-2xl font-semibold text-white">Financial Goals</h1>
-              <Button variant="default" className="text-blue-500 hover:text-blue-500/70 cursor-pointer">Manage Goals</Button>
+              <Button variant="default" className="text-blue-500 hover:text-blue-500/70 cursor-pointer" onClick={() => navigate('/goals')}>Manage Goals</Button>
             </div>
             <div className="flex flex-col gap-5 w-full">
               {goals && Array.isArray(goals) && goals.length > 0 ? (

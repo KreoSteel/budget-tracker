@@ -37,6 +37,16 @@
   --color-background-light-secondary: #F8FAFC;   /* Light mode secondary */
   --color-card-background: #1E2939;
   
+  /* Gradient Variables */
+  --gradient-bg: linear-gradient(135deg, #1E2939, #142133);
+  --gradient-primary: linear-gradient(135deg, var(--color-gradient-blue), var(--color-gradient-purple));
+  --gradient-secondary: linear-gradient(135deg, var(--color-gradient-cyan), var(--color-gradient-pink));
+  --gradient-accent: linear-gradient(135deg, var(--color-gradient-indigo), var(--color-gradient-purple));
+  --gradient-rainbow: linear-gradient(45deg, var(--color-gradient-blue), var(--color-gradient-purple), var(--color-gradient-cyan), var(--color-gradient-pink), var(--color-gradient-indigo));
+  --gradient-card: linear-gradient(135deg, #1E2939, #142133);
+  --gradient-transfer: linear-gradient(135deg, #1E2939, #1F2937);
+  --gradient-button: linear-gradient(135deg, var(--color-gradient-blue), var(--color-gradient-purple));
+  
   /* Text Colors */
   --color-text-light: #FFFFFF;                   /* White text */
   --color-text-dark: #1A1A2E;                    /* Dark text */
@@ -145,6 +155,35 @@ body {
 /* Custom CSS Classes for Budget Tracker */
 .sidebar-gradient-bg {
   background: var(--color-sidebar-bg);
+}
+
+/* Gradient Utility Classes */
+.gradient-primary {
+  background: var(--gradient-primary);
+}
+
+.gradient-secondary {
+  background: var(--gradient-secondary);
+}
+
+.gradient-accent {
+  background: var(--gradient-accent);
+}
+
+.gradient-rainbow {
+  background: var(--gradient-rainbow);
+}
+
+.gradient-card {
+  background: var(--gradient-card);
+}
+
+.gradient-transfer {
+  background: var(--gradient-transfer);
+}
+
+.gradient-button {
+  background: var(--gradient-button);
 }
 
 .sidebar-active-item {

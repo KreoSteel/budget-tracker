@@ -135,9 +135,8 @@ export default function Accounts() {
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button
-                variant="default"
+                variant="gradient"
                 size="lg"
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 px-6"
               >
                 <FaPlus className="size-4" />
                 Add Account
@@ -237,7 +236,7 @@ export default function Accounts() {
         </div>
 
         {/* Transfer Section */}
-        <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
+        <div className="bg-gradient-to-br from-gray-800 via-gray-900 to-gray-800 p-6 rounded-lg border-2 border-gray-800/80 shadow-xl">
           <h2 className="text-xl font-semibold text-white mb-4">Transfer Money</h2>
           <div className="flex flex-col lg:flex-row gap-8 items-start justify-between">
             {/* From Account */}
