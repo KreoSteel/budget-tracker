@@ -22,6 +22,7 @@ export function getGoalsByUserId(userId: string, limit?: number) {
     }
 }
 
+
 export function getGoalById(id: string) {
     try {
         return Goal.findById(id);

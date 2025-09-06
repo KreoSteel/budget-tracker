@@ -13,10 +13,10 @@ const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
     const percentage = Math.min(Math.max((value / max) * 100, 0), 100)
     
     const variantClasses = {
-      default: "bg-blue-500",
-      success: "bg-green-500", 
-      warning: "bg-yellow-500",
-      danger: "bg-red-500"
+      default: "bg-gradient-to-r from-blue-500 to-blue-600",
+      success: "bg-gradient-to-r from-green-500 to-emerald-600", 
+      warning: "bg-gradient-to-r from-yellow-500 to-orange-500",
+      danger: "bg-gradient-to-r from-red-500 to-red-600"
     }
     
     const sizeClasses = {
@@ -37,7 +37,7 @@ const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
       >
         <div
           className={cn(
-            "h-full w-full flex-1 transition-all duration-300 ease-in-out",
+            "h-full w-full flex-1 transition-all duration-500 ease-out rounded-full shadow-sm",
             variantClasses[variant]
           )}
           style={{ width: `${percentage}%` }}

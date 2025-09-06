@@ -129,7 +129,15 @@ export default function AccountCard() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-3 bg-gray-900  from-gray-800 via-gray-900 to-gray-800 p-6 rounded-2xl hover:translate-y-[-5px] transition-all duration-300 border border-gray-800/80 shadow-xl">
+            <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-semibold text-white">Your Accounts</h1>
+                {totalPages > 1 && (
+                    <span className="text-sm text-gray-400">
+                        Page {currentPage} of {totalPages}
+                    </span>
+                )}
+            </div>
             {/* Toggle for showing hidden accounts */}
             {hiddenAccountsCount > 0 && (
                 <div className="flex items-center justify-between px-4 py-3 bg-gray-800/50 rounded-lg border border-gray-700 mx-4">

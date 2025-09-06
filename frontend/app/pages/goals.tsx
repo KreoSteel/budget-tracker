@@ -7,12 +7,20 @@ import { useNavigate } from "react-router";
 import { TotalBalanceCard } from "~/components/ui/total-balance-card";
 import { useFinancialMetrics } from "~/hooks/useTransactions";
 import { CircleStar } from "lucide-react";
+import GoalsCard from "~/components/cards/GoalsCard";
+import { getAllActiveGoals, getTotalTargetAmount, formatCurrency, getTotalRemainingAmount, getAverageProgressPercentage } from "~/lib/goalUtils";
 
 
 export default function Goals() {
     const navigate = useNavigate();
     const { data: currentUser } = useCurrentUser();
     const { data: financialMetrics } = useFinancialMetrics(currentUser?._id || '');
+    const { data: goals } = useGoals(currentUser?._id || '');
+    const activeGoals = getAllActiveGoals(goals || []);
+    const averageProgressPercentage = getAverageProgressPercentage(goals || []);
+    const totalTargetAmount = getTotalTargetAmount(goals || []);
+    const totalRemainingAmount = getTotalRemainingAmount(goals || []);
+
     return (
         <div className="flex h-screen w-[60vw]">
             <Sidebar
@@ -40,27 +48,27 @@ export default function Goals() {
                         <h1 className="text-2xl font-semibold text-white flex items-center gap-4">
                             <CircleStar className="text-purple-400" size={28} /> Goals Summary
                         </h1>
-                        <h1 className="text-md text-gray-400">5 total goals</h1>
                     </div>
                     <div className="flex justify-between items-center text-center px-10">
                         <span className="flex flex-col gap-2">
-                            <h1 className="text-2xl font-semibold text-purple-400">5</h1>
-                            <p className="text-md text-gray-400">Active Goals</p>
+                            <h1 className="text-2xl font-semibold text-purple-400">{activeGoals}</h1>
+                            <p className="text-md text-gray-400">Total Goals</p>
                         </span>
                         <span className="flex flex-col gap-2">
-                            <h1 className="text-2xl font-semibold text-green-400">53%</h1>
+                            <h1 className="text-2xl font-semibold text-green-400">{averageProgressPercentage}%</h1>
                             <p className="text-md text-gray-400">Average Progress</p>
                         </span>
                         <span className="flex flex-col gap-2">
-                            <h1 className="text-2xl font-semibold text-orange-400">30,000</h1>
+                            <h1 className="text-2xl font-semibold text-orange-400">{formatCurrency(totalRemainingAmount, currentUser?.preferences.currency || '$')}</h1>
                             <p className="text-md text-gray-400">Total Left to Save</p>
                         </span>
                         <span className="flex flex-col gap-2">
-                            <h1 className="text-2xl font-semibold text-red-400">100,000</h1>
+                            <h1 className="text-2xl font-semibold text-red-400">{formatCurrency(totalTargetAmount, currentUser?.preferences.currency || '$')}</h1>
                             <p className="text-md text-gray-400">Total Target Amount</p>
                         </span>
                     </div>
                 </div>
+                <GoalsCard />
             </div>
         </div>
     )

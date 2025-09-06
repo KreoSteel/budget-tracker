@@ -12,9 +12,25 @@ export function calculateGoalProgress(goal: Goal) {
   }
 }
 
+export function getAverageProgressPercentage(goals: Goal[]): number {
+  return Number((goals.reduce((acc, goal) => acc + (goal.currentAmount / goal.targetAmount) * 100, 0) / goals.length).toFixed(2))
+}
+
+export function getTotalTargetAmount(goals: Goal[]): number {
+  return goals.reduce((acc, goal) => acc + goal.targetAmount, 0)
+}
+
+export function getTotalRemainingAmount(goals: Goal[]): number {
+  return goals.reduce((acc, goal) => acc + goal.targetAmount - goal.currentAmount, 0)
+}
+
+export function getAllActiveGoals(goals: Goal[]): number {
+  return goals.filter((goal) => goal.isActive).length
+}
+
 export function getProgressVariant(progressPercentage: number): "success" | "warning" | "danger" {
-  if (progressPercentage >= 75) return "success"
-  if (progressPercentage >= 50) return "warning"
+  if (progressPercentage >= 80) return "success"
+  if (progressPercentage >= 40) return "warning"
   return "danger"
 }
 
