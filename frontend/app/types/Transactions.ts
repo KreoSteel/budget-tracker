@@ -20,3 +20,13 @@ export interface Transaction {
     createdAt: Date;
     updatedAt: Date;
 }
+
+export type CreateTransactionRequest = {
+    amount: number;
+    description: string;
+    type: "income" | "expense";
+    accountId: string;
+    categoryId: string;
+    date: string;
+    paymentMethod: string;
+}

@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { useGoals } from "~/hooks/useGoals";
 import { useCurrentUser } from "~/hooks/useCurrentUser";
 import Sidebar from "~/components/layouts/Sidebar";
@@ -8,18 +7,22 @@ import { TotalBalanceCard } from "~/components/ui/total-balance-card";
 import { useFinancialMetrics } from "~/hooks/useTransactions";
 import { CircleStar } from "lucide-react";
 import GoalsCard from "~/components/cards/GoalsCard";
-import { getAllActiveGoals, getTotalTargetAmount, formatCurrency, getTotalRemainingAmount, getAverageProgressPercentage } from "~/lib/goalUtils";
-
+import { getTotalGoals, getTotalTargetAmount, formatCurrency, getTotalRemainingAmount, getAverageProgressPercentage } from "~/lib/goalUtils";
+import GoalForm from "~/components/forms/GoalForm";
+import { Button } from "~/components/ui/button";
+import { useState } from "react";
+import { FaPlus } from "react-icons/fa";
 
 export default function Goals() {
     const navigate = useNavigate();
     const { data: currentUser } = useCurrentUser();
     const { data: financialMetrics } = useFinancialMetrics(currentUser?._id || '');
-    const { data: goals } = useGoals(currentUser?._id || '');
-    const activeGoals = getAllActiveGoals(goals || []);
+    const { data: goals } = useGoals(currentUser?._id || '', { limit: undefined });
     const averageProgressPercentage = getAverageProgressPercentage(goals || []);
     const totalTargetAmount = getTotalTargetAmount(goals || []);
     const totalRemainingAmount = getTotalRemainingAmount(goals || []);
+    const [isGoalFormOpen, setIsGoalFormOpen] = useState(false);
+    const totalGoals = getTotalGoals(goals || []);
 
     return (
         <div className="flex h-screen w-[60vw]">
@@ -33,6 +36,10 @@ export default function Goals() {
                         <h1 className="text-4xl font-semibold text-white">Financial Goals</h1>
                         <p className="text-lg text-gray-400">Manage your financial goals and track your progress.</p>
                     </div>
+                    <Button onClick={() => setIsGoalFormOpen(true)} variant="gradient" size="lg">
+                        <FaPlus />
+                        Add Goal
+                    </Button>
                 </div>
 
                 {/* Total Balance Card */}
@@ -51,7 +58,7 @@ export default function Goals() {
                     </div>
                     <div className="flex justify-between items-center text-center px-10">
                         <span className="flex flex-col gap-2">
-                            <h1 className="text-2xl font-semibold text-purple-400">{activeGoals}</h1>
+                            <h1 className="text-2xl font-semibold text-purple-400">{totalGoals}</h1>
                             <p className="text-md text-gray-400">Total Goals</p>
                         </span>
                         <span className="flex flex-col gap-2">
@@ -59,17 +66,23 @@ export default function Goals() {
                             <p className="text-md text-gray-400">Average Progress</p>
                         </span>
                         <span className="flex flex-col gap-2">
-                            <h1 className="text-2xl font-semibold text-orange-400">{formatCurrency(totalRemainingAmount, currentUser?.preferences.currency || '$')}</h1>
+                            <h1 className="text-2xl font-semibold text-orange-400">{formatCurrency(totalRemainingAmount, currentUser?.preferences.currency || 'USD')}</h1>
                             <p className="text-md text-gray-400">Total Left to Save</p>
                         </span>
                         <span className="flex flex-col gap-2">
-                            <h1 className="text-2xl font-semibold text-red-400">{formatCurrency(totalTargetAmount, currentUser?.preferences.currency || '$')}</h1>
+                            <h1 className="text-2xl font-semibold text-red-400">{formatCurrency(totalTargetAmount, currentUser?.preferences.currency || 'USD')}</h1>
                             <p className="text-md text-gray-400">Total Target Amount</p>
                         </span>
                     </div>
                 </div>
                 <GoalsCard />
             </div>
+
+            {/* Goal Form */}
+            <GoalForm 
+                isOpen={isGoalFormOpen} 
+                onClose={() => setIsGoalFormOpen(false)} 
+            />
         </div>
     )
 }

@@ -22,3 +22,11 @@ export type TransferMoneyResponse = {
     message: string;
     type: 'success' | 'error';
 }
+
+export type CreateAccountRequest = {
+    name: string;
+    type: string;
+    balance: number;
+    currency: string;
+    bankName?: string;
+}

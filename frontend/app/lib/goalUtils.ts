@@ -24,8 +24,8 @@ export function getTotalRemainingAmount(goals: Goal[]): number {
   return goals.reduce((acc, goal) => acc + goal.targetAmount - goal.currentAmount, 0)
 }
 
-export function getAllActiveGoals(goals: Goal[]): number {
-  return goals.filter((goal) => goal.isActive).length
+export function getTotalGoals(goals: Goal[]): number {
+  return goals.length
 }
 
 export function getProgressVariant(progressPercentage: number): "success" | "warning" | "danger" {

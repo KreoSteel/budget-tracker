@@ -10,3 +10,8 @@ export interface Category {
     createdAt: Date;
     updatedAt: Date;
 }
+
+export type CreateCategoryRequest = {
+    name: string;
+    type: "income" | "expense";
+}

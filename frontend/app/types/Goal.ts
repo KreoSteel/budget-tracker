@@ -19,9 +19,11 @@ export interface CreateGoalRequest {
   targetDate?: string;
   description?: string;
   priority?: Goal['priority'];
+  userId?: string;
 }
 
 export interface UpdateGoalRequest {
+  _id: string;
   name?: string;
   targetAmount?: number;
   currentAmount?: number;

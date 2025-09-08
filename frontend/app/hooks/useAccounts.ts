@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import http from "~/lib/http";
-import type { Account } from "~/types/Account";
+import type { Account, CreateAccountRequest } from "~/types/Account";
 import { authService } from "~/services/authService";
 
 
@@ -67,8 +67,8 @@ const useAccountByUserId = (options?: {
 const useCreateAccount = () => {
     const client = useQueryClient();
     const {mutate, isPending, error} = useMutation({
-        mutationFn: async (account: Account) => {
-            const response = await http.post<Account>("/accounts", account);
+        mutationFn: async (accountData: CreateAccountRequest) => {
+            const response = await http.post<Account>("/accounts", accountData);
             return response.data;
         },
         onSuccess: () => {

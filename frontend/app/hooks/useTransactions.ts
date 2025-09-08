@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import http from "~/lib/http";
-import type { Transaction } from "~/types/Transactions";
+import type { Transaction, CreateTransactionRequest } from "~/types/Transactions";
 
 export interface FinancialMetrics {
     totalBalance: {
@@ -73,8 +73,8 @@ const useRecentTransactions = (userId?: string, limit: number = 6) => {
 const useCreateTransaction = () => {
     const client = useQueryClient();
     const { mutate, isPending, error } = useMutation({
-        mutationFn: async (transaction: Partial<Transaction>) => {
-            const response = await http.post<Transaction>("/transactions", transaction);
+        mutationFn: async (transactionData: CreateTransactionRequest) => {
+            const response = await http.post<Transaction>("/transactions", transactionData);
             return response.data;
         },
         onSuccess: () => {

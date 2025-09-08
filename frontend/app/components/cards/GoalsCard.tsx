@@ -12,19 +12,23 @@ import {
   PaginationEllipsis,
 } from "~/components/ui/pagination";
 import { useCurrentUser } from "~/hooks/useCurrentUser";
-import { useGoals } from "~/hooks/useGoals";
+import { useGoals, useDeleteGoal } from "~/hooks/useGoals";
 import { calculateGoalProgress, getProgressVariant, formatCurrency as formatGoalCurrency, getDaysRemaining } from "~/lib/goalUtils";
 import { generatePaginationItems } from "~/lib/utils";
 import type { Goal } from "~/types/Goal";
 import { Button } from "../ui/button";
+import GoalForm from "../forms/GoalForm";
 
 
 export default function GoalsCard() {
   const { data: currentUser } = useCurrentUser();
-  const { data: goals } = useGoals(currentUser?._id || '');
-  
+  const { data: goals } = useGoals(currentUser?._id || '', { limit: undefined });
+  const [isGoalFormOpen, setIsGoalFormOpen] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const { mutate: deleteGoal } = useDeleteGoal();
+
   // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);``
   const goalsPerPage = 4;
   
   // Calculate pagination
@@ -43,17 +47,33 @@ export default function GoalsCard() {
       return <span className="text-sm text-red-400 bg-red-500/20 px-3 py-1.5 rounded-xl">High</span>
     }
   }
+  
+  const handleDeleteGoal = (id: string) => {
+    deleteGoal(id);
+  };
+
+  const handleEditGoal = (goal: Goal) => {
+    setEditingGoal(goal);
+    setIsGoalFormOpen(true);
+  };
+
+  const handleCloseForm = () => {
+    setIsGoalFormOpen(false);
+    setEditingGoal(null);
+  };
 
   return (
     
     <div className="flex flex-col gap-7 w-full bg-gray-900  from-gray-800 via-gray-900 to-gray-800 p-6 rounded-2xl hover:translate-y-[-5px] transition-all duration-300 border border-gray-800/80 shadow-xl">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-white">Your Goals</h1>
-        {totalPages > 1 && (
-          <span className="text-sm text-gray-400">
-            Page {currentPage} of {totalPages}
-          </span>
-        )}
+        <div className="flex items-center gap-4">
+          {totalPages > 1 && (
+            <span className="text-sm text-gray-400">
+              Page {currentPage} of {totalPages}
+            </span>
+          )}
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-6">
       {currentGoals && Array.isArray(currentGoals) && currentGoals.length > 0 ? (
@@ -73,10 +93,20 @@ export default function GoalsCard() {
                     <p className="text-sm text-gray-400">{goal.description}</p>
                   </div>
                   <span className="flex items-center justify-end gap-1.5">
-                    <Button variant="ghost" size="sm" className="hover:bg-gray-800 transition-all duration-200 cursor-pointer group">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="hover:bg-gray-800 transition-all duration-200 cursor-pointer group"
+                      onClick={() => handleEditGoal(goal)}
+                    >
                       <Edit3 size={16} className="text-gray-400 group-hover:text-blue-400 transition-all duration-200" />
                     </Button>
-                    <Button variant="ghost" size="sm" className="hover:bg-gray-800  transition-all duration-200 cursor-pointer group">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="hover:bg-gray-800  transition-all duration-200 cursor-pointer group" 
+                      onClick={() => handleDeleteGoal(goal._id)}
+                    >
                       <Trash2 size={16} className="text-gray-400 group-hover:text-red-400 transition-all duration-200" />
                     </Button>
                   </span>
@@ -178,6 +208,13 @@ export default function GoalsCard() {
           </Pagination>
         </div>
       )}
+
+      {/* Goal Form for editing */}
+      <GoalForm 
+        isOpen={isGoalFormOpen} 
+        onClose={handleCloseForm}
+        editingGoal={editingGoal}
+      />
     </div>
   );
 }

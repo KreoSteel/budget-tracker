@@ -12,12 +12,13 @@ export function getAllGoals() {
 
 export function getGoalsByUserId(userId: string, limit?: number) {
     try {
-        let query = Goal.find({ userId: new Types.ObjectId(userId) });
+        let query = Goal.find({ userId: new Types.ObjectId(userId) }).sort({ createdAt: -1 });
         if (limit) {
             query = query.limit(limit);
         }
         return query;
     } catch (error) {
+        console.error("Service error getting goals by user id:", error);
         throw new Error("Failed to get goals by user id");
     }
 }
@@ -31,11 +32,20 @@ export function getGoalById(id: string) {
     }
 }
 
-export function createGoal(goalData: typeof Goal) {
+export function createGoal(goalData: any) {
     try {
+        // Ensure userId is provided
+        if (!goalData.userId) {
+            throw new Error("User ID is required to create a goal");
+        }
+        
         const goal = new Goal(goalData);
         return goal.save();
     } catch (error) {
+        console.error("Service error creating goal:", error);
+        if (error instanceof Error) {
+            throw error;
+        }
         throw new Error("Failed to create goal");
     }
 }
