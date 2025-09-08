@@ -17,12 +17,14 @@ interface LoginDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onLoginSuccess: (user: any) => void;
+  onSwitchToRegister?: () => void;
 }
 
 export function LoginDialog({
   open,
   onOpenChange,
   onLoginSuccess,
+  onSwitchToRegister,
 }: LoginDialogProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -51,17 +53,18 @@ export function LoginDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Login</DialogTitle>
-          <DialogDescription>
-            Enter your credentials to access your account.
+      <DialogContent className="max-w-md mx-auto bg-gray-900 border border-gray-700 shadow-2xl">
+        <DialogHeader className="text-center mb-6">
+          <DialogTitle className="text-2xl font-bold text-white mb-2">Sign In</DialogTitle>
+          <DialogDescription className="text-gray-400">
+            Enter your credentials to access your account
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right">
+          
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium text-gray-300">
                 Email
               </Label>
               <Input
@@ -69,13 +72,15 @@ export function LoginDialog({
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="col-span-3"
+                className="w-full bg-gray-800 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500"
+                placeholder="Enter your email"
                 required
                 disabled={isLoading}
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="password" className="text-right">
+            
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-medium text-gray-300">
                 Password
               </Label>
               <Input
@@ -83,22 +88,47 @@ export function LoginDialog({
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="col-span-3"
+                className="w-full bg-gray-800 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500"
+                placeholder="Enter your password"
                 required
                 disabled={isLoading}
               />
             </div>
           </div>
+            
           {error && (
-            <div className="text-red-500 text-sm text-center mb-4">
-              {error}
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+              <span className="text-red-400 text-sm">{error}</span>
             </div>
           )}
-          <DialogFooter>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Logging in..." : "Login"}
+          
+          <div className="space-y-4">
+            <Button 
+              type="submit" 
+              disabled={isLoading}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3"
+            >
+              {isLoading ? "Signing in..." : "Sign In"}
             </Button>
-          </DialogFooter>
+            
+            {onSwitchToRegister && (
+              <div className="text-center">
+                <p className="text-gray-400 text-sm">
+                  Don't have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onOpenChange(false);
+                      onSwitchToRegister();
+                    }}
+                    className="text-blue-400 hover:text-blue-300 font-medium"
+                  >
+                    Create one here
+                  </button>
+                </p>
+              </div>
+            )}
+          </div>
         </form>
       </DialogContent>
     </Dialog>

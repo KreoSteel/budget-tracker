@@ -15,6 +15,8 @@ import { TotalBalanceCard } from "~/components/ui/total-balance-card";
 import type { Account, CreateAccountRequest } from "~/types/Account";
 import { useFinancialMetrics } from "~/hooks/useTransactions";
 import AccountForm from "~/components/forms/AccountForm";
+import { ProjectedRoute } from "~/components/ProjectedRoute";
+import { SidebarProvider } from "~/components/ui/sidebar";
 
 export default function Accounts() {
   const navigate = useNavigate();
@@ -71,7 +73,9 @@ export default function Accounts() {
   const accounts = accountsData?.data || [];
 
   return (
-    <div className="flex h-screen w-[60vw]">
+    <SidebarProvider>
+      <ProjectedRoute>
+        <div className="flex h-screen w-[60vw]">
       <Sidebar
         selectedItem={"accounts"}
         onItemSelect={(item) => handleItemSelect(item, navigate)}
@@ -189,6 +193,8 @@ export default function Accounts() {
         onSubmit={handleCreateAccount}
         isSubmitting={isPending}
       />
-    </div>
+        </div>
+      </ProjectedRoute>
+    </SidebarProvider>
   );
 }

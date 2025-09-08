@@ -12,6 +12,8 @@ import GoalForm from "~/components/forms/GoalForm";
 import { Button } from "~/components/ui/button";
 import { useState } from "react";
 import { FaPlus } from "react-icons/fa";
+import { ProjectedRoute } from "~/components/ProjectedRoute";
+import { SidebarProvider } from "~/components/ui/sidebar";
 
 export default function Goals() {
     const navigate = useNavigate();
@@ -25,7 +27,9 @@ export default function Goals() {
     const totalGoals = getTotalGoals(goals || []);
 
     return (
-        <div className="flex h-screen w-[60vw]">
+        <SidebarProvider>
+            <ProjectedRoute>
+                <div className="flex h-screen w-[60vw]">
             <Sidebar
                 selectedItem="goals"
                 onItemSelect={(item) => handleItemSelect(item, navigate)}
@@ -83,6 +87,8 @@ export default function Goals() {
                 isOpen={isGoalFormOpen} 
                 onClose={() => setIsGoalFormOpen(false)} 
             />
-        </div>
+            </div>
+            </ProjectedRoute>
+        </SidebarProvider>
     )
 }

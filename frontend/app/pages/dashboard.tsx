@@ -1,11 +1,10 @@
-import { DollarSign, TrendingDown, TrendingUp, CircleStar, Users } from "lucide-react";
+import { DollarSign, TrendingDown, TrendingUp, CircleStar } from "lucide-react";
 import { FaChartLine, FaWallet } from "react-icons/fa6";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { Progress } from "~/components/ui/progress";
 import { useState } from "react";
-import { useAccountByUserId, useAccounts, useGetNetWorth } from "~/hooks/useAccounts";
-import { LoginDialog } from "~/components/auth/LoginDialog";
+import { useAccounts, useGetNetWorth } from "~/hooks/useAccounts";
 import { useFinancialMetrics, useRecentTransactions } from "~/hooks/useTransactions";
 import { useGoals } from "~/hooks/useGoals";
 import { calculateGoalProgress, getProgressVariant, formatCurrency as formatGoalCurrency } from "~/lib/goalUtils";
@@ -14,7 +13,8 @@ import { useNavigate } from "react-router";
 import { formatCurrency } from "~/lib/utils.js";
 import { useCurrentUser } from "~/hooks/useCurrentUser";
 import { authService } from "~/services/authService";
-import { Navigate } from "react-router";
+import ProjectedRoute from "~/components/ProjectedRoute";
+import { SidebarProvider } from "~/components/ui/sidebar";
 import type { User } from "~/types/User";
 
 
@@ -299,82 +299,40 @@ function AuthenticatedDashboard({ selectedItem, onItemSelect, onLogout }: {
   );
 }
 
-export default function Dashboard() {
+function Dashboard() {
   const [selectedItem, setSelectedItem] = useState('dashboard');
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(authService.getCurrentUser());
   const navigate = useNavigate();
 
   const handleItemSelect = (item: string) => {
     setSelectedItem(item);
 
     if (item === 'dashboard') {
-      navigate('/');
+      navigate('/dashboard');
     } else {
       navigate(`/${item}`);
     }
   };
 
-  const handleLoginSuccess = (user: User) => {
-    setCurrentUser(user);
-  };
-
   const handleLogout = () => {
     authService.logout();
-    setCurrentUser(null);
+    navigate('/');
   };
 
-  const handleLoginClick = () => {
-    console.log('=== BUTTON CLICKED ===');
-    setIsLoginOpen(true);
-  };
+  return (
+    <AuthenticatedDashboard
+      selectedItem={selectedItem}
+      onItemSelect={handleItemSelect}
+      onLogout={handleLogout}
+    />
+  );
+}
 
-  if (!currentUser || !authService.isAuthenticated()) {
-    return (
-      <>
-        <div className="flex h-screen w-[60vw]">
-          <Sidebar
-            selectedItem={selectedItem}
-            onItemSelect={handleItemSelect}
-          />
-          <div className="flex-1 p-10 flex items-center justify-center font-source-sans bg-[var(--color-background-dark-secondary)]">
-            <div className="text-center">
-              <h1 className="text-2xl font-semibold text-white mb-4">Welcome to FinanceTracker</h1>
-              <p className="text-gray-400 mb-6">Please log in to access your dashboard and financial data.</p>
-              <Button onClick={handleLoginClick} size="lg">
-                Login
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        <LoginDialog
-          open={isLoginOpen}
-          onOpenChange={setIsLoginOpen}
-          onLoginSuccess={handleLoginSuccess}
-        />
-      </>
-    );
-  }
-
-  if (currentUser && authService.isAuthenticated()) {
-    return (
-      <>
-        <AuthenticatedDashboard
-          selectedItem={selectedItem}
-          onItemSelect={handleItemSelect}
-          onLogout={handleLogout}
-        />
-
-        {/* Login Dialog - must be rendered even when authenticated */}
-        <LoginDialog
-          open={isLoginOpen}
-          onOpenChange={setIsLoginOpen}
-          onLoginSuccess={handleLoginSuccess}
-        />
-      </>
-    );
-  }
-
-  return null;
+export default function ProtectedDashboard() {
+  return (
+    <SidebarProvider>
+      <ProjectedRoute requireAuth={true} redirectTo="/">
+        <Dashboard />
+      </ProjectedRoute>
+    </SidebarProvider>
+  );
 }

@@ -6,7 +6,18 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface RegisterCredentials {
+  name: string;
+  email: string;
+  password: string;
+}
+
 export interface LoginResponse {
+  user: User;
+  token: string;
+}
+
+export interface RegisterResponse {
   user: User;
   token: string;
 }
@@ -68,6 +79,27 @@ class AuthService {
       return { 
         success: false, 
         error: error.response?.data?.message || 'Login failed' 
+      };
+    }
+  }
+
+  async register(credentials: RegisterCredentials): Promise<{ success: boolean; user?: User; error?: string }> {
+    try {
+      const response = await http.post<RegisterResponse>('/auth/register', credentials);
+      
+      if (response.data) {
+        this.token = response.data.token;
+        this.user = response.data.user;
+        this.setStoredToken(this.token);
+        this.setStoredUser(this.user);
+        return { success: true, user: this.user };
+      }
+      
+      return { success: false, error: 'Registration failed' };
+    } catch (error: any) {
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Registration failed' 
       };
     }
   }

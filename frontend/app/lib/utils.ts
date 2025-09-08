@@ -16,7 +16,7 @@ export const formatCurrency = (amount: number, currency: string = 'USD') => {
 export function handleItemSelect(item: string, navigate: any) {
   // Navigate to the appropriate route
   if (item === 'dashboard') {
-    navigate('/');
+    navigate('/dashboard');
   } else {
     navigate(`/${item}`);
   }
