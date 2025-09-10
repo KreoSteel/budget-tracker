@@ -1,6 +1,18 @@
 import Transaction from "../models/transaction";
 import mongoose, { ObjectId } from "mongoose";
 import Account from "../models/account";
+import { updateBudgetSpentAmounts } from "./budget";
+
+interface TransactionUpdateData {
+    amount?: number;
+    type?: 'income' | 'expense';
+    description?: string;
+    categoryId?: ObjectId;
+    date?: Date;
+    paymentMethod?: string;
+    isRecurring?: boolean;
+    recurringDetails?: any;
+}
 
 export async function getAllTransactions() {
     const transactions = await Transaction.find();
@@ -228,6 +240,32 @@ export async function createTransaction(
         }
 
         await account.save({ session });
+
+        // UPDATE BUDGET SPENT AMOUNTS (only for expense transactions with category)
+        if (type === 'expense' && categoryId) {
+            // Get the account's userId to update budgets
+            const accountWithUser = await Account.findById(accountId).populate('userId').session(session);
+            if (accountWithUser && accountWithUser.userId) {
+                try {
+                    // Extract the userId properly - handle both string and ObjectId cases
+                    const userId = typeof accountWithUser.userId === 'string' 
+                        ? accountWithUser.userId 
+                        : accountWithUser.userId._id.toString();
+                    
+                    await updateBudgetSpentAmounts(
+                        userId,
+                        categoryId.toString(),
+                        amount,
+                        'add',
+                        date || new Date()
+                    );
+                } catch (budgetError) {
+                    console.error("Error updating budget spent amounts:", budgetError);
+                    // Don't fail the transaction if budget update fails
+                }
+            }
+        }
+
         await session.commitTransaction();
         
         return newTransaction;
@@ -266,7 +304,27 @@ export async function deleteTransaction(id: string) {
         // 4. Save the updated account balance
         await account.save({ session });
 
-        // 5. Delete the transaction
+        // 5. UPDATE BUDGET SPENT AMOUNTS (subtract the deleted expense)
+        if (transaction.type === 'expense' && transaction.categoryId) {
+            try {
+                // Extract the userId properly - handle both string and ObjectId cases
+                const userId = typeof account.userId === 'string' 
+                    ? account.userId 
+                    : account.userId.toString();
+                    
+                await updateBudgetSpentAmounts(
+                    userId,
+                    transaction.categoryId.toString(),
+                    transaction.amount,
+                    'subtract'
+                );
+            } catch (budgetError) {
+                console.error("Error updating budget spent amounts on deletion:", budgetError);
+                // Don't fail the transaction if budget update fails
+            }
+        }
+
+        // 6. Delete the transaction
         const result = await Transaction.findByIdAndDelete(id).session(session);
 
         await session.commitTransaction();
@@ -280,23 +338,79 @@ export async function deleteTransaction(id: string) {
     }
 }
 
-export async function updateTransaction(id: string, updateData: Partial<typeof Transaction>) {
-    const result = await Transaction.findById(id);
-    if (!result) {
-        throw new Error("Transaction not found");
-    }
+export async function updateTransaction(id: string, updateData: TransactionUpdateData) {
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    const updateResult = await Transaction.updateOne(
-        { _id: id },
-        {
-            $set: { ...updateData },
-            $inc: { __v: 1 }
+    try {
+        // Get the original transaction
+        const originalTransaction = await Transaction.findById(id).session(session);
+        if (!originalTransaction) {
+            throw new Error("Transaction not found");
         }
-    );
-    console.log('Updated result:', updateResult);
-    const updatedTransaction = await Transaction.findById(id);
 
-    return updatedTransaction;
+        // Get the account to access userId
+        const account = await Account.findById(originalTransaction.accountId).session(session);
+        if (!account) {
+            throw new Error("Account not found");
+        }
+
+        // If updating amount, type, or category, we need to handle budget updates
+        const needsBudgetUpdate = 
+            updateData.amount !== undefined || 
+            updateData.type !== undefined || 
+            updateData.categoryId !== undefined;
+
+        // If this is an expense transaction with a category, subtract the old amount from budget
+        if (needsBudgetUpdate && originalTransaction.type === 'expense' && originalTransaction.categoryId) {
+            try {
+                await updateBudgetSpentAmounts(
+                    account.userId.toString(),
+                    originalTransaction.categoryId.toString(),
+                    originalTransaction.amount,
+                    'subtract'
+                );
+            } catch (budgetError) {
+                console.error("Error removing old budget amount:", budgetError);
+            }
+        }
+
+        // Update the transaction
+        const updateResult = await Transaction.updateOne(
+            { _id: id },
+            {
+                $set: { ...updateData },
+                $inc: { __v: 1 }
+            },
+            { session }
+        );
+
+        // If the updated transaction is an expense with a category, add the new amount to budget
+        if (needsBudgetUpdate && updateData.type === 'expense' && updateData.categoryId) {
+            try {
+                await updateBudgetSpentAmounts(
+                    account.userId.toString(),
+                    updateData.categoryId.toString(),
+                    updateData.amount || originalTransaction.amount,
+                    'add',
+                    updateData.date || (originalTransaction.date ? new Date(originalTransaction.date) : new Date())
+                );
+            } catch (budgetError) {
+                console.error("Error adding new budget amount:", budgetError);
+            }
+        }
+
+        await session.commitTransaction();
+        
+        const updatedTransaction = await Transaction.findById(id).session(session);
+        return updatedTransaction;
+
+    } catch (error) {
+        await session.abortTransaction();
+        throw error;
+    } finally {
+        session.endSession();
+    }
 }
 
 export async function getTransactionsByDateRange(startDate: Date, endDate: Date, userId: string) {

@@ -14,4 +14,5 @@ export interface Category {
 export type CreateCategoryRequest = {
     name: string;
     type: "income" | "expense";
+    userId: string;
 }

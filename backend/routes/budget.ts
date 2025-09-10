@@ -10,5 +10,7 @@ router.get('/:budgetId/alerts', budgetsController.getBudgetAlerts);
 router.put('/:id', budgetsController.updateBudget);
 router.post('/', budgetsController.createBudget);
 router.delete('/:id', budgetsController.deleteBudget);
+router.post('/:budgetId/recalculate', budgetsController.recalculateBudgetProgress);
+router.post('/test-update', budgetsController.testBudgetUpdate);
 
 export { router as budgetsRouter };

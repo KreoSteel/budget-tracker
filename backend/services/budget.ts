@@ -1,5 +1,5 @@
 import Budget from "../models/budget";
-import { ObjectId } from "mongoose";
+import mongoose, { ObjectId } from "mongoose";
 import { ICategory } from "../models/budget";
 
 export async function getBudgetsByUserId(userId: ObjectId) {
@@ -48,6 +48,88 @@ export async function deleteBudget(id: string) {
         return deletedBudget;
     } catch (error) {
         throw new Error("Error deleting budget");
+    }
+}
+
+// Update budget spent amounts when transactions are created/updated/deleted
+export async function updateBudgetSpentAmounts(userId: string, categoryId: string, amount: number, operation: 'add' | 'subtract' = 'add', transactionDate?: Date) {
+    try {
+        const checkDate = transactionDate || new Date();
+        
+        // Find active budgets for the user that contain this category and are within the date range
+        const budgets = await Budget.find({
+            userId: new mongoose.Types.ObjectId(userId),
+            isActive: true,
+            'categories.categoryId': new mongoose.Types.ObjectId(categoryId),
+            startDate: { $lte: checkDate },
+            endDate: { $gte: checkDate }
+        });
+
+        // Update spent amounts for matching budgets
+        for (const budget of budgets) {
+            const categoryIndex = budget.categories.findIndex(
+                cat => cat.categoryId.toString() === categoryId
+            );
+
+            if (categoryIndex !== -1) {
+                if (operation === 'add') {
+                    budget.categories[categoryIndex].spentAmount += amount;
+                } else {
+                    budget.categories[categoryIndex].spentAmount = Math.max(0, budget.categories[categoryIndex].spentAmount - amount);
+                }
+                await budget.save();
+            }
+        }
+
+        return { success: true, updatedBudgets: budgets.length };
+    } catch (error) {
+        console.error("Error updating budget spent amounts:", error);
+        throw new Error("Error updating budget spent amounts");
+    }
+}
+
+// Recalculate budget progress for a specific budget
+export async function recalculateBudgetProgress(budgetId: string) {
+    try {
+        const budget = await Budget.findById(budgetId);
+        if (!budget) {
+            throw new Error("Budget not found");
+        }
+
+        // Reset all spent amounts to 0
+        budget.categories.forEach(category => {
+            category.spentAmount = 0;
+        });
+
+        // Get all transactions for this user within the budget period
+        const Transaction = require("../models/transaction");
+        const transactions = await Transaction.find({
+            userId: budget.userId,
+            type: 'expense',
+            date: {
+                $gte: budget.startDate,
+                $lte: budget.endDate
+            }
+        });
+
+        // Add spent amounts back based on transactions
+        for (const transaction of transactions) {
+            if (transaction.categoryId) {
+                const categoryIndex = budget.categories.findIndex(
+                    cat => cat.categoryId.toString() === transaction.categoryId.toString()
+                );
+
+                if (categoryIndex !== -1) {
+                    budget.categories[categoryIndex].spentAmount += transaction.amount;
+                }
+            }
+        }
+
+        await budget.save();
+        return budget;
+    } catch (error) {
+        console.error("Error recalculating budget progress:", error);
+        throw new Error("Error recalculating budget progress");
     }
 }
 

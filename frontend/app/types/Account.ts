@@ -29,4 +29,5 @@ export type CreateAccountRequest = {
     balance: number;
     currency: string;
     bankName?: string;
+    userId: string;
 }

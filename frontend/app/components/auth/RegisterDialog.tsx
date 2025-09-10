@@ -158,7 +158,8 @@ export function RegisterDialog({
             <Button 
               type="submit" 
               disabled={isLoading}
-              className="w-full bg-green-600 hover:bg-green-700 text-white py-3"
+              variant="success"
+              className="w-full"
             >
               {isLoading ? "Creating Account..." : "Create Account"}
             </Button>

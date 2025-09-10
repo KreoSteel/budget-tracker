@@ -106,7 +106,8 @@ export function LoginDialog({
             <Button 
               type="submit" 
               disabled={isLoading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3"
+              variant="default"
+              className="w-full"
             >
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>

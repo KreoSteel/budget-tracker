@@ -70,8 +70,6 @@ export default function TransactionsCard({ filters, setFilters }: { filters: any
         deleteTransaction(id);
     };
 
-    console.log(currentTransactions);
-
 
     if (isLoading) {
         return (

@@ -116,13 +116,6 @@ const useUpdateAccount = () => {
             const previousAccounts = client.getQueryData(["accounts"]);
             const previousNetWorth = client.getQueryData(["netWorth"]);
 
-            // Debug: Log what's in the cache
-            console.log("Cache debug:", {
-                accounts: previousAccounts,
-                accountsType: typeof previousAccounts,
-                isArray: Array.isArray(previousAccounts),
-                netWorth: previousNetWorth
-            });
 
             // Optimistically update the accounts cache - handle different data structures
             client.setQueryData(["accounts"], (old: any) => {
@@ -171,8 +164,6 @@ const useUpdateAccount = () => {
             client.invalidateQueries({ queryKey: ["netWorth"] });
             client.invalidateQueries({ queryKey: ["transactions"] });
             
-            // You could also show a success toast here
-            console.log("Account updated successfully:", updatedAccount.name);
         },
         onError: (error, updatedAccount, context) => {
             try {

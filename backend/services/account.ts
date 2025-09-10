@@ -60,7 +60,6 @@ export async function updateAccount(id: string, updateData: {
             $inc: { __v: 1 }
         }
     );
-    console.log('Updated result:', updateResult);
     const updatedAccount = await Account.findById(id);
 
     return updatedAccount;

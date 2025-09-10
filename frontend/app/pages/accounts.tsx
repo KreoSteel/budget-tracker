@@ -32,7 +32,12 @@ export default function Accounts() {
   const [isAccountFormOpen, setIsAccountFormOpen] = useState(false);
 
   const handleCreateAccount = (accountData: CreateAccountRequest) => {
-    createAccount(accountData, {
+    if (!currentUser?._id) {
+      console.error('No user ID available');
+      return;
+    }
+    
+    createAccount({ ...accountData, userId: currentUser._id }, {
       onSuccess: () => {
         setIsAccountFormOpen(false);
       }
@@ -89,14 +94,16 @@ export default function Accounts() {
             <h1 className="text-4xl font-semibold text-white">Accounts</h1>
             <p className="text-lg text-gray-400">Manage your bank accounts and financial accounts.</p>
           </div>
-          <Button
-            variant="gradient"
-            size="lg"
-            onClick={() => setIsAccountFormOpen(true)}
-          >
-            <FaPlus className="size-4" />
-            Add Account
-          </Button>
+          <div className="flex flex-col lg:flex-row items-center gap-4">
+            <Button
+              variant="default"
+              size="lg"
+              onClick={() => setIsAccountFormOpen(true)}
+            >
+              <FaPlus className="size-4" />
+              Add Account
+            </Button>
+          </div>
         </div>
 
         {/* Total Balance Card */}
@@ -170,7 +177,8 @@ export default function Accounts() {
             <div className="flex-1 space-y-2">
               <Label className="text-sm font-medium text-gray-300 opacity-0">Action</Label>
               <Button
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="default"
+                className="w-full"
                 onClick={handleTransfer}
                 disabled={isTransferMoneyPending || !fromAccountId || !toAccountId || !amount || fromAccountId === toAccountId}
               >

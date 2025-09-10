@@ -85,6 +85,8 @@ const useCreateTransaction = () => {
             client.invalidateQueries({ queryKey: ["accounts"] });
             client.invalidateQueries({ queryKey: ["user-accounts"] });
             client.invalidateQueries({ queryKey: ["filteredTransactions"] });
+            client.invalidateQueries({ queryKey: ["budgets"] });
+            client.invalidateQueries({ queryKey: ["budget-summary"] });
         },
     })
 
@@ -170,6 +172,8 @@ const useDeleteTransaction = () => {
             client.invalidateQueries({ queryKey: ["financial-metrics"] });
             client.invalidateQueries({ queryKey: ["accounts"] });
             client.invalidateQueries({ queryKey: ["user-accounts"] });
+            client.invalidateQueries({ queryKey: ["budgets"] });
+            client.invalidateQueries({ queryKey: ["budget-summary"] });
         },
     });
 }

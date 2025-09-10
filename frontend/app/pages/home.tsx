@@ -48,14 +48,17 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
               <Button 
                 onClick={() => setIsRegisterOpen(true)} 
-                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-4 text-lg font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                variant="default"
+                size="xl"
+                className="flex-1"
               >
                 Get Started
               </Button>
               <Button 
                 onClick={() => setIsLoginOpen(true)} 
                 variant="outline" 
-                className="flex-1 border-2 border-gray-600 text-gray-300 hover:bg-gray-800 hover:border-gray-500 py-4 text-lg rounded-xl transition-all duration-300"
+                size="xl"
+                className="flex-1"
               >
                 Sign In
               </Button>

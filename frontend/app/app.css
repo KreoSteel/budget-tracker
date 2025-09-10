@@ -119,9 +119,39 @@
   --color-sidebar-hover: rgba(255, 255, 255, 0.1);
 }
 
+/* Theme Variables - Default to Light */
+:root {
+  --color-background-primary: var(--color-background-light);
+  --color-background-secondary: var(--color-background-light-secondary);
+  --color-background-tertiary: var(--color-background-light);
+  --color-text-primary: var(--color-text-dark);
+  --color-text-secondary: var(--color-text-muted);
+  --color-border-primary: var(--color-border-light);
+}
+
 /* Dark Mode Overrides */
+.dark {
+  --color-background-primary: var(--color-background-dark-primary);
+  --color-background-secondary: var(--color-background-dark-secondary);
+  --color-background-tertiary: var(--color-background-dark-tertiary);
+  --color-text-primary: var(--color-text-light);
+  --color-text-secondary: var(--color-text-accent);
+  --color-border-primary: var(--color-border-dark);
+}
+
+/* Light Mode Overrides */
+.light {
+  --color-background-primary: var(--color-background-light);
+  --color-background-secondary: var(--color-background-light-secondary);
+  --color-background-tertiary: var(--color-background-light);
+  --color-text-primary: var(--color-text-dark);
+  --color-text-secondary: var(--color-text-muted);
+  --color-border-primary: var(--color-border-light);
+}
+
+/* System Preference Fallbacks */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not(.light):not(.dark) {
     --color-background-primary: var(--color-background-dark-primary);
     --color-background-secondary: var(--color-background-dark-secondary);
     --color-background-tertiary: var(--color-background-dark-tertiary);
@@ -131,9 +161,8 @@
   }
 }
 
-/* Light Mode Overrides */
 @media (prefers-color-scheme: light) {
-  :root {
+  :root:not(.light):not(.dark) {
     --color-background-primary: var(--color-background-light);
     --color-background-secondary: var(--color-background-light-secondary);
     --color-background-tertiary: var(--color-background-light);

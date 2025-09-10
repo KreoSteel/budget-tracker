@@ -211,7 +211,7 @@ export default function GoalForm({ isOpen, onClose, editingGoal }: GoalFormProps
               <Button 
                 type="button" 
                 variant="outline"
-                className="flex-1 bg-gray-700/50 border-gray-600 text-gray-200 hover:bg-gray-600 hover:text-white transition-all duration-200 h-9"
+                className="flex-1"
               >
                 Cancel
               </Button>
@@ -219,7 +219,8 @@ export default function GoalForm({ isOpen, onClose, editingGoal }: GoalFormProps
             <Button 
               type="submit" 
               disabled={isPending || !formData.name || !formData.targetAmount}
-              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold transition-all duration-200 h-9 disabled:opacity-50 disabled:cursor-not-allowed"
+              variant="default"
+              className="flex-1"
             >
               {isPending ? (isEditing ? 'Updating...' : 'Creating...') : (isEditing ? 'Update Goal' : 'Create Goal')}
             </Button>

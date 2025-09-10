@@ -28,7 +28,6 @@ export async function updateCategory(id: string, updateData: Partial<typeof Cate
             $inc: { __v: 1 }
         }
     );
-    console.log('Updated result:', updateResult);
     const updatedCategory = await Category.findById(id);
 
     return updatedCategory;

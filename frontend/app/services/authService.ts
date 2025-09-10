@@ -144,6 +144,17 @@ class AuthService {
     }
     return this.token;
   }
+
+  async updateUserPreferences(userId: string, preferences: Partial<User['preferences']>): Promise<{ success: boolean; user?: User; error?: string }> {
+    try {
+      const response = await http.put<User>(`/users/${userId}`, { preferences });
+      this.user = response.data;
+      this.setStoredUser(this.user);
+      return { success: true, user: this.user };
+    } catch (error: any) {
+      return { success: false, error: error.response?.data?.message || 'Update failed' };
+    }
+  }
 }
 
 export const authService = new AuthService();

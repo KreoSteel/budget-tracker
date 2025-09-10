@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getBudgetsByUserId, getBudgetById, updateBudget, createBudget, deleteBudget, getBudgetProgress, getBudgetAlerts } from "../services/budget";
+import { getBudgetsByUserId, getBudgetById, updateBudget, createBudget, deleteBudget, getBudgetProgress, getBudgetAlerts, recalculateBudgetProgress } from "../services/budget";
 import { ObjectId } from "mongoose";
 import mongoose from "mongoose";
 
@@ -118,7 +118,7 @@ export const budgetsController = {
                             error: "Invalid categoryId in categories array" 
                         });
                     }
-                    if (category.allocatedAmount && (typeof category.allocatedAmount !== 'number' || category.allocatedAmount < 0)) {
+                    if (category.allocatedAmount !== undefined && (typeof category.allocatedAmount !== 'number' || category.allocatedAmount < 0)) {
                         return res.status(400).json({ 
                             error: "Category allocated amount must be a non-negative number" 
                         });
@@ -173,15 +173,16 @@ export const budgetsController = {
     
     createBudget: async (req: Request, res: Response) => {
         try {
-            const { name, period, startDate, endDate, totalAmount, categories } = req.body;
-            const userId = req.query.userId || req.headers['user-id'];
+            const { name, period, startDate, endDate, totalAmount, categories, userId } = req.body;
+            const userIdFromQuery = req.query.userId || req.headers['user-id'];
+            const finalUserId = userId || userIdFromQuery;
             
             // Validate required fields
-            if (!name || !period || !startDate || !endDate || !totalAmount || !userId) {
+            if (!name || !period || !startDate || !endDate || !totalAmount || !finalUserId) {
                 return res.status(400).json({ 
                     error: "Missing required fields",
                     required: ["name", "period", "startDate", "endDate", "totalAmount", "userId"],
-                    received: { name, period, startDate, endDate, totalAmount, userId }
+                    received: { name, period, startDate, endDate, totalAmount, userId: finalUserId }
                 });
             }
 
@@ -204,7 +205,7 @@ export const budgetsController = {
                 });
             }
 
-            if (!mongoose.Types.ObjectId.isValid(userId as string)) {
+            if (!mongoose.Types.ObjectId.isValid(finalUserId as string)) {
                 return res.status(400).json({ 
                     error: "Invalid userId format" 
                 });
@@ -249,9 +250,9 @@ export const budgetsController = {
                             error: "Invalid categoryId in categories array" 
                         });
                     }
-                    if (!category.allocatedAmount || typeof category.allocatedAmount !== 'number' || category.allocatedAmount <= 0) {
+                    if (typeof category.allocatedAmount !== 'number' || category.allocatedAmount < 0) {
                         return res.status(400).json({ 
-                            error: "Category allocated amount must be a positive number" 
+                            error: "Category allocated amount must be a non-negative number" 
                         });
                     }
                     if (category.spentAmount && (typeof category.spentAmount !== 'number' || category.spentAmount < 0)) {
@@ -261,18 +262,18 @@ export const budgetsController = {
                     }
                 }
 
-                // Validate total allocated amount matches totalAmount
+                // Validate total allocated amount doesn't exceed totalAmount
                 const totalAllocated = categories.reduce((sum, cat) => sum + cat.allocatedAmount, 0);
-                if (Math.abs(totalAllocated - totalAmount) > 0.01) { // Allow for small floating point differences
+                if (totalAllocated > totalAmount) {
                     return res.status(400).json({ 
-                        error: "Sum of category allocated amounts must equal total budget amount",
+                        error: "Sum of category allocated amounts cannot exceed total budget amount",
                         totalAmount,
                         totalAllocated
                     });
                 }
             }
 
-            const budget = await createBudget(name, period, new Date(startDate), new Date(endDate), totalAmount, userId as string, categories);
+            const budget = await createBudget(name, period, new Date(startDate), new Date(endDate), totalAmount, finalUserId as string, categories);
             
             res.status(201).json({
                 success: true,
@@ -445,6 +446,81 @@ export const budgetsController = {
             res.status(500).json({ 
                 error: "Internal server error",
                 message: "Failed to fetch budget alerts"
+            });
+        }
+    },
+
+    recalculateBudgetProgress: async (req: Request, res: Response) => {
+        try {
+            const { budgetId } = req.params;
+            
+            // Validate budgetId parameter
+            if (!budgetId) {
+                return res.status(400).json({ 
+                    error: "Budget ID parameter is required",
+                    message: "Please provide budgetId in the URL"
+                });
+            }
+
+            // Validate ObjectId format
+            if (!mongoose.Types.ObjectId.isValid(budgetId)) {
+                return res.status(400).json({ 
+                    error: "Invalid budget ID format",
+                    message: "Budget ID must be a valid MongoDB ObjectId"
+                });
+            }
+
+            const updatedBudget = await recalculateBudgetProgress(budgetId);
+            
+            res.json({
+                success: true,
+                message: "Budget progress recalculated successfully",
+                data: updatedBudget
+            });
+        } catch (error) {
+            console.error("Error recalculating budget progress:", error);
+            
+            // Handle specific service errors
+            if (error instanceof Error) {
+                if (error.message.includes("not found")) {
+                    return res.status(404).json({ 
+                        error: "Budget not found",
+                        message: error.message
+                    });
+                }
+            }
+            
+            res.status(500).json({ 
+                error: "Internal server error",
+                message: "Failed to recalculate budget progress"
+            });
+        }
+    },
+
+    testBudgetUpdate: async (req: Request, res: Response) => {
+        try {
+            const { userId, categoryId, amount } = req.body;
+            
+            if (!userId || !categoryId || !amount) {
+                return res.status(400).json({ 
+                    error: "Missing required fields",
+                    required: ["userId", "categoryId", "amount"]
+                });
+            }
+
+            const { updateBudgetSpentAmounts } = require("../services/budget");
+            const result = await updateBudgetSpentAmounts(userId, categoryId, amount, 'add');
+            
+            res.json({
+                success: true,
+                message: "Budget update test completed",
+                result
+            });
+        } catch (error) {
+            console.error("Error testing budget update:", error);
+            res.status(500).json({ 
+                error: "Internal server error",
+                message: "Failed to test budget update"
             });
         }
     }

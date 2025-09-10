@@ -71,7 +71,7 @@ function AuthenticatedDashboard({ selectedItem, onItemSelect, onLogout }: {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-3">
                 <span className="text-white">Welcome, {currentUser?.name || 'User'}</span>
-                <Button onClick={onLogout} variant="gradient">
+                <Button onClick={onLogout} variant="destructive">
                   Logout
                 </Button>
               </div>
@@ -203,7 +203,7 @@ function AuthenticatedDashboard({ selectedItem, onItemSelect, onLogout }: {
           <div className="flex flex-col gap-6 w-1/2 bg-gray-900 rounded-xl border border-gray-800 p-6 hover:border-gray-700 transition-all duration-200">
             <div className="flex items-center justify-between w-full">
               <h1 className="text-2xl font-semibold text-white">Recent Transactions</h1>
-              <Button variant="default" className="text-blue-500 hover:text-blue-500/70 cursor-pointer" onClick={() => navigate('/transactions')}>View All</Button>
+              <Button variant="link" onClick={() => navigate('/transactions')}>View All</Button>
             </div>
             <div className="flex flex-col gap-2 w-full">
               {Array.isArray(recentTransactions) && recentTransactions.length > 0 ? (
@@ -238,7 +238,7 @@ function AuthenticatedDashboard({ selectedItem, onItemSelect, onLogout }: {
           <div className="flex flex-col gap-6 w-1/2 bg-gray-900 rounded-xl border border-gray-800 p-6 hover:border-gray-700 transition-all duration-200">
             <div className="flex items-center justify-between w-full">
               <h1 className="text-2xl font-semibold text-white">Financial Goals</h1>
-              <Button variant="default" className="text-blue-500 hover:text-blue-500/70 cursor-pointer" onClick={() => navigate('/goals')}>Manage Goals</Button>
+              <Button variant="link" onClick={() => navigate('/goals')}>Manage Goals</Button>
             </div>
             <div className="flex flex-col gap-5 w-full">
               {goals && Array.isArray(goals) && goals.length > 0 ? (

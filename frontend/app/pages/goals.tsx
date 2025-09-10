@@ -40,7 +40,7 @@ export default function Goals() {
                         <h1 className="text-4xl font-semibold text-white">Financial Goals</h1>
                         <p className="text-lg text-gray-400">Manage your financial goals and track your progress.</p>
                     </div>
-                    <Button onClick={() => setIsGoalFormOpen(true)} variant="gradient" size="lg">
+                    <Button onClick={() => setIsGoalFormOpen(true)} variant="default" size="lg">
                         <FaPlus />
                         Add Goal
                     </Button>
